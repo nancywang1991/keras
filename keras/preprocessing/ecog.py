@@ -15,6 +15,7 @@ import threading
 import warnings
 from .. import backend as K
 import cPickle as pickle
+import pdb
 
 def transform_matrix_offset_center(matrix, x, y):
     o_x = float(x) / 2 + 0.5
@@ -68,11 +69,11 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = pickle.load(path)
+    signal = np.expand_dims(pickle.load(open(path)),-1)
     return signal
 
 
-def list_edfs(directory, ext='edf'):
+def list_edfs(directory, ext='p'):
     return [os.path.join(root, f)
             for root, dirs, files in os.walk(directory) for f in files
             if re.match('([\w]+\.(?:' + ext + '))', f)]
@@ -159,10 +160,10 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(256, 256), color_mode='rgb',
+                            target_size=(96, 500),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
-                            save_to_dir=None, save_prefix='', save_format='jpeg',
+                            save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
                             follow_links=False):
         return DirectoryIterator(
             directory, self,
@@ -387,9 +388,9 @@ class DirectoryIterator(Iterator):
         self.directory = directory
         self.ecog_data_generator = EcogDataGenerator
         self.target_size = tuple(target_size)
-        if color_mode not in {'grayscale'}:
-            raise ValueError('Invalid color mode:', color_mode,
-                             '; expected "grayscale".')
+        #if color_mode not in {'grayscale'}:
+        #    raise ValueError('Invalid color mode:', color_mode,
+        #                     '; expected "grayscale".')
         self.color_mode = color_mode
         self.dim_ordering = dim_ordering
         self.image_shape = self.target_size + (1,)
@@ -403,7 +404,7 @@ class DirectoryIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        white_list_formats = {'edf'}
+        white_list_formats = {'p'}
 
         # first, count the number of samples and classes
         self.nb_sample = 0
@@ -462,9 +463,7 @@ class DirectoryIterator(Iterator):
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            x = load_edf(os.path.join(self.directory, fname),
-                           grayscale=grayscale,
-                           target_size=self.target_size)
+            x = load_edf(os.path.join(self.directory, fname))
             x = self.ecog_data_generator.random_transform(x)
             x = self.ecog_data_generator.standardize(x)
             batch_x[i] = x
