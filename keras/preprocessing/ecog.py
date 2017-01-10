@@ -435,6 +435,7 @@ class DirectoryIterator(Iterator):
         super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
 
     def next(self):
+        pdb.set_trace()
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock so it can be done in parallel
@@ -444,7 +445,7 @@ class DirectoryIterator(Iterator):
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             x = load_edf(os.path.join(self.directory, fname))
-            pdb.set_trace()
+
             x = self.ecog_data_generator.random_transform(x)
             x = self.ecog_data_generator.standardize(x)
             batch_x[i] = x
