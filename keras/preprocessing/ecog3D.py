@@ -69,7 +69,7 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = np.expand_dims(pickle.load(open(path)),-1)
+    signal = np.reshape(pickle.load(open(path)), (8,8,1000))
     return signal
 
 
