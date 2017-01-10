@@ -69,11 +69,11 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = np.expand_dims(pickle.load(open(path)),-1)
+    signal = np.expand_dims(np.load(path),-1)
     return signal
 
 
-def list_edfs(directory, ext='p'):
+def list_edfs(directory, ext='npy'):
     return [os.path.join(root, f)
             for root, dirs, files in os.walk(directory) for f in files
             if re.match('([\w]+\.(?:' + ext + '))', f)]
@@ -404,7 +404,7 @@ class DirectoryIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        white_list_formats = {'p'}
+        white_list_formats = {'npy'}
 
         # first, count the number of samples and classes
         self.nb_sample = 0
