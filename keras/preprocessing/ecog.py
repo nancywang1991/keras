@@ -193,7 +193,7 @@ class EcogDataGenerator(object):
             x = x + noise
         if self.time_shift_range:
             if target_size[-1]+self.time_shift_range > x.shape[-1]:
-                print("time shift must be less than %i" % x.shape[-1]-target_size[-1])
+                print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
             x = x[shift:(shift+target_size[-1])]
