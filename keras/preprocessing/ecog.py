@@ -443,7 +443,7 @@ class DirectoryIterator(Iterator):
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             x = load_edf(os.path.join(self.directory, fname))
-
+            pdb.set_trace()
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
             batch_x[i] = x
