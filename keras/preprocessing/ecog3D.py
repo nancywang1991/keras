@@ -69,17 +69,17 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = np.reshape(pickle.load(open(path)), (8,8,1000))
+    signal = np.expand_dims(np.reshape(np.load(path), (8,8,1200)), -1)
     return signal
 
 
-def list_edfs(directory, ext='p'):
+def list_edfs(directory, ext='npy'):
     return [os.path.join(root, f)
             for root, dirs, files in os.walk(directory) for f in files
             if re.match('([\w]+\.(?:' + ext + '))', f)]
 
 
-class EcogDataGenerator(object):
+class Ecog3DDataGenerator(object):
     '''Generate minibatches with
     real-time data augmentation.
 
@@ -89,28 +89,8 @@ class EcogDataGenerator(object):
         featurewise_std_normalization: divide inputs by std of the dataset.
         samplewise_std_normalization: divide each input by its std.
         zca_whitening: apply ZCA whitening.
-        rotation_range: degrees (0 to 180).
-        width_shift_range: fraction of total width.
-        height_shift_range: fraction of total height.
-        shear_range: shear intensity (shear angle in radians).
-        zoom_range: amount of zoom. if scalar z, zoom will be randomly picked
-            in the range [1-z, 1+z]. A sequence of two can be passed instead
-            to select this range.
-        channel_shift_range: shift range for each channels.
-        fill_mode: points outside the boundaries are filled according to the
-            given mode ('constant', 'nearest', 'reflect' or 'wrap'). Default
-            is 'nearest'.
-        cval: value used for points outside the boundaries when fill_mode is
-            'constant'. Default is 0.
-        horizontal_flip: whether to randomly flip images horizontally.
-        vertical_flip: whether to randomly flip images vertically.
-        rescale: rescaling factor. If None or 0, no rescaling is applied,
-            otherwise we multiply the data by the value provided
-            (before applying any other transformation).
-        preprocessing_function: function that will be implied on each input.
-            The function will run before any other modification on it.
-            The function should take one argument: one image (Numpy tensor with rank 3),
-            and should output a Numpy tensor with the same shape.
+        time_shift_range: milliseconds to shift.
+        gaussian_noise_range: amount of gaussian noise to add to data
         dim_ordering: 'th' or 'tf'. In 'th' mode, the channels dimension
             (the depth) is at index 1, in 'tf' mode it is at index 3.
             It defaults to the `image_dim_ordering` value found in your
@@ -123,16 +103,9 @@ class EcogDataGenerator(object):
                  featurewise_std_normalization=False,
                  samplewise_std_normalization=False,
                  zca_whitening=False,
-                 rotation_range=0.,
-                 width_shift_range=0.,
-                 height_shift_range=0.,
-                 shear_range=0.,
-                 zoom_range=0.,
-                 channel_shift_range=0.,
-                 fill_mode='nearest',
-                 cval=0.,
-                 rescale=None,
-                 preprocessing_function=None,
+                 time_shift_range=None,
+                 gaussian_noise_range=None,
+                 center=True,
                  dim_ordering='default'):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
@@ -140,17 +113,16 @@ class EcogDataGenerator(object):
         self.mean = None
         self.std = None
         self.principal_components = None
-        self.rescale = rescale
-        self.preprocessing_function = preprocessing_function
+        self.gaussian_noise_range = gaussian_noise_range
+        self.time_shift_range = time_shift_range
 
         if dim_ordering not in {'tf'}:
             raise ValueError('dim_ordering should be "tf" (channel after row and '
                              'column) ', dim_ordering)
         self.dim_ordering = dim_ordering
         if dim_ordering == 'tf':
-            self.channel_index1 = 1
-            self.channel_index2 = 2
-            self.row_index = 3
+            self.channel_index = 1
+            self.row_index = 2
 
     def flow(self, X, y=None, batch_size=32, shuffle=True, seed=None,
              save_to_dir=None, save_prefix='', save_format='jpeg'):
@@ -161,7 +133,7 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(8,8,500),
+                            target_size=(8,8, 1000, 1),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
@@ -175,11 +147,11 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
             follow_links=follow_links)
 
-    def standardize(self, x):
-        if self.preprocessing_function:
-            x = self.preprocessing_function(x)
-        if self.rescale:
-            x *= self.rescale
+    def standardize(self, x, target_size):
+        if self.center:
+            cutoff = (x.shape[-2]- target_size[-2])/2
+            x = x[:,:,cutoff:-cutoff]
+
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
         if self.samplewise_center:
@@ -215,12 +187,17 @@ class EcogDataGenerator(object):
                               'first by calling `.fit(numpy_data)`.')
         return x
 
-    def random_transform(self, x):
-        # x is a single image, so it doesn't have image number at index 0
-        img_row_index = self.row_index - 1
-        img_channel_index = self.channel_index - 1
+    def random_transform(self, x, target_size):
+        if self.gaussian_noise_range:
+            noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
+            x = x + noise
+        if self.time_shift_range:
+            if target_size[-2]+self.time_shift_range > x.shape[-2]:
 
-
+                print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
+                raise ValueError
+            shift = np.random.randint(self.time_shift_range)
+            x = x[:,:, shift:(shift+target_size[-2])]
         return x
 
     def fit(self, X,
@@ -250,35 +227,31 @@ class EcogDataGenerator(object):
 
         X = np.copy(X)
         if augment:
-            raise NotImplementedError
-            #aX = np.zeros(tuple([rounds * X.shape[0]] + list(X.shape)[1:]))
-            #for r in range(rounds):
-            #    for i in range(X.shape[0]):
-            #        aX[i + r * X.shape[0]] = self.random_transform(X[i])
-            #X = aX
+            aX = np.zeros(tuple([rounds * X.shape[0]] + list(X.shape)[1:]))
+            for r in range(rounds):
+                for i in range(X.shape[0]):
+                    aX[i + r * X.shape[0]] = self.random_transform(X[i])
+            X = aX
 
         if self.featurewise_center:
-            raise NotImplementedError
-            #self.mean = np.mean(X, axis=(0, self.row_index))
-            #broadcast_shape = [1, 1, 1,1]
-            #broadcast_shape[self.channel_index - 1] = X.shape[self.channel_index]
-            #self.mean = np.reshape(self.mean, broadcast_shape)
-            #X -= self.mean
+            self.mean = np.mean(X, axis=(0, self.row_index))
+            broadcast_shape = [1, 1, 1]
+            broadcast_shape[self.channel_index - 1] = X.shape[self.channel_index]
+            self.mean = np.reshape(self.mean, broadcast_shape)
+            X -= self.mean
 
         if self.featurewise_std_normalization:
-            raise NotImplementedError
-            #self.std = np.std(X, axis=(0, self.row_index))
-            #broadcast_shape = [1, 1, 1]
-            #broadcast_shape[self.channel_index - 1] = X.shape[self.channel_index]
-            #self.std = np.reshape(self.std, broadcast_shape)
-            #X /= (self.std + K.epsilon())
+            self.std = np.std(X, axis=(0, self.row_index))
+            broadcast_shape = [1, 1, 1]
+            broadcast_shape[self.channel_index - 1] = X.shape[self.channel_index]
+            self.std = np.reshape(self.std, broadcast_shape)
+            X /= (self.std + K.epsilon())
 
         if self.zca_whitening:
-            raise NotImplementedError
-            #flatX = np.reshape(X, (X.shape[0], X.shape[1] * X.shape[2] * X.shape[3]))
-            #sigma = np.dot(flatX.T, flatX) / flatX.shape[0]
-            #U, S, V = linalg.svd(sigma)
-            #self.principal_components = np.dot(np.dot(U, np.diag(1. / np.sqrt(S + 10e-7))), U.T)
+            flatX = np.reshape(X, (X.shape[0], X.shape[1] * X.shape[2] * X.shape[3]))
+            sigma = np.dot(flatX.T, flatX) / flatX.shape[0]
+            U, S, V = linalg.svd(sigma)
+            self.principal_components = np.dot(np.dot(U, np.diag(1. / np.sqrt(S + 10e-7))), U.T)
 
 
 class Iterator(object):
@@ -382,7 +355,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(256, 256), color_mode='rgb',
+                 target_size=(64, 1000, 1), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
@@ -398,7 +371,7 @@ class DirectoryIterator(Iterator):
         #                     '; expected "grayscale".')
         self.color_mode = color_mode
         self.dim_ordering = dim_ordering
-        self.image_shape = self.target_size + (1,)
+        self.image_shape = self.target_size
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
@@ -409,7 +382,7 @@ class DirectoryIterator(Iterator):
         self.save_prefix = save_prefix
         self.save_format = save_format
 
-        white_list_formats = {'p'}
+        white_list_formats = {'npy'}
 
         # first, count the number of samples and classes
         self.nb_sample = 0
@@ -460,6 +433,7 @@ class DirectoryIterator(Iterator):
         super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
 
     def next(self):
+        #pdb.set_trace()
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock so it can be done in parallel
@@ -469,8 +443,9 @@ class DirectoryIterator(Iterator):
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             x = load_edf(os.path.join(self.directory, fname))
-            x = self.ecog_data_generator.random_transform(x)
-            x = self.ecog_data_generator.standardize(x)
+            #pdb.set_trace()
+            x = self.ecog_data_generator.random_transform(x, self.target_size)
+            x = self.ecog_data_generator.standardize(x, self.target_size)
             batch_x[i] = x
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:

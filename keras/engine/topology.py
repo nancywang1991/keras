@@ -1718,7 +1718,7 @@ class Container(Layer):
             self.input_names.append(layer.name)
         for layer in self.output_layers:
             self.output_names.append(layer.name)
-        pdb.set_trace()
+
         self.internal_input_shapes = [x._keras_shape for x in self.inputs]
         self.internal_output_shapes = [x._keras_shape for x in self.outputs]
 
