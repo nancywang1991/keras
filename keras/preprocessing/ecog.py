@@ -133,7 +133,7 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(64, 1000),
+                            target_size=(64, 1000, 1),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
@@ -218,7 +218,7 @@ class EcogDataGenerator(object):
             seed: random seed.
         '''
         X = np.asarray(X)
-        if X.ndim != 3:
+        if X.ndim != 4:
             raise ValueError('Input to `.fit()` should have rank 3. '
                              'Got array with shape: ' + str(X.shape))
 
