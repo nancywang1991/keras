@@ -149,7 +149,7 @@ class EcogDataGenerator(object):
 
     def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-1]- target_size[-1])/2
+            cutoff = (x.shape[1]- target_size[-1])/2
             x = x[cutoff:-cutoff]
 
         # x is a single image, so it doesn't have image number at index 0
@@ -192,8 +192,8 @@ class EcogDataGenerator(object):
             noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
             x = x + noise
         if self.time_shift_range:
-            if target_size[-1]+self.time_shift_range > x.shape[-1]:
-                print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
+            if target_size[-1]+self.time_shift_range > x.shape[1]:
+                print("time shift must be less than %i" % (x.shape[1]-target_size[-1]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
             x = x[shift:(shift+target_size[-1])]
