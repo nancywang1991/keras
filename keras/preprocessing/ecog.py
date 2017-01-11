@@ -151,8 +151,7 @@ class EcogDataGenerator(object):
         if self.center:
             cutoff = (x.shape[-1]- target_size[-1])/2
             x = x[cutoff:-cutoff]
-        if self.rescale:
-            x *= self.rescale
+
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
         if self.samplewise_center:
