@@ -149,7 +149,7 @@ class EcogDataGenerator(object):
 
     def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-2]- target_size[-1])/2
+            cutoff = (x.shape[-2]- target_size[-2])/2
             x = x[:,cutoff:-cutoff]
 
         # x is a single image, so it doesn't have image number at index 0
@@ -192,12 +192,12 @@ class EcogDataGenerator(object):
             noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
             x = x + noise
         if self.time_shift_range:
-            if target_size[-1]+self.time_shift_range > x.shape[-2]:
-                pdb.set_trace()
-                print("time shift must be less than %i" % (x.shape[-2]-target_size[-1]))
+            if target_size[-2]+self.time_shift_range > x.shape[-2]:
+                #pdb.set_trace()
+                print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
-            x = x[:,shift:(shift+target_size[-1])]
+            x = x[:,shift:(shift+target_size[-2])]
         return x
 
     def fit(self, X,
@@ -371,7 +371,7 @@ class DirectoryIterator(Iterator):
         #                     '; expected "grayscale".')
         self.color_mode = color_mode
         self.dim_ordering = dim_ordering
-        self.image_shape = self.target_size + (1,)
+        self.image_shape = self.target_size 
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
@@ -443,7 +443,7 @@ class DirectoryIterator(Iterator):
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             x = load_edf(os.path.join(self.directory, fname))
-            pdb.set_trace()
+            #pdb.set_trace()
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
             batch_x[i] = x
