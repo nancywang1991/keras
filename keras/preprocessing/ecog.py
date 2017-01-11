@@ -113,8 +113,8 @@ class EcogDataGenerator(object):
         self.mean = None
         self.std = None
         self.principal_components = None
-        self.gaussian_noise_range = None
-        self.time_shift_range = None
+        self.gaussian_noise_range = gaussian_noise_range
+        self.time_shift_range = time_shift_range
 
         if dim_ordering not in {'tf'}:
             raise ValueError('dim_ordering should be "tf" (channel after row and '
