@@ -193,7 +193,7 @@ class EcogDataGenerator(object):
             x = x + noise
         if self.time_shift_range:
             if target_size[-2]+self.time_shift_range > x.shape[-2]:
-                #pdb.set_trace()
+                pdb.set_trace()
                 print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)

@@ -820,7 +820,7 @@ class Sequential(Model):
                       class_weight=None, max_q_size=10, nb_worker=1,
                       pickle_safe=False, **kwargs):
         import pdb
-        pdb.set_trace()
+        #pdb.set_trace()
         '''Fits the model on data generated batch-by-batch by
         a Python generator.
         The generator is run in parallel to the model, for efficiency.
