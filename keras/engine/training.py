@@ -7,6 +7,7 @@ import time
 import numpy as np
 import multiprocessing
 import threading
+import pdb
 
 import six
 
@@ -104,6 +105,7 @@ def standardize_input_data(data, names, shapes=None,
                     continue
                 if ref_dim:
                     if ref_dim != dim:
+                        pdb.set_trace()
                         raise Exception('Error when checking ' + exception_prefix +
                                         ': expected ' + names[i] +
                                         ' to have shape ' + str(shapes[i]) +
