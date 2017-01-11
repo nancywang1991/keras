@@ -147,9 +147,9 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
             follow_links=follow_links)
 
-    def standardize(self, x):
+    def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-1]-self.target_size[-1])/2
+            cutoff = (x.shape[-1]- target_size[-1])/2
             x = x[cutoff:-cutoff]
         if self.preprocessing_function:
             x = self.preprocessing_function(x)
@@ -190,16 +190,16 @@ class EcogDataGenerator(object):
                               'first by calling `.fit(numpy_data)`.')
         return x
 
-    def random_transform(self, x):
+    def random_transform(self, x, target_size):
         if self.gaussian_noise_range:
             noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
             x = x + noise
         if self.time_shift_range:
-            if self.target_size[-1]+self.time_shift_range > x.shape[-1]:
-                print("time shift must be less than %i" % x.shape[-1]-self.target_size[-1])
+            if target_size[-1]+self.time_shift_range > x.shape[-1]:
+                print("time shift must be less than %i" % x.shape[-1]-target_size[-1])
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
-            x = x[shift:(shift+self.target_size[-1])]
+            x = x[shift:(shift+target_size[-1])]
         return x
 
     def fit(self, X,
@@ -446,8 +446,8 @@ class DirectoryIterator(Iterator):
             fname = self.filenames[j]
             x = load_edf(os.path.join(self.directory, fname))
 
-            x = self.ecog_data_generator.random_transform(x)
-            x = self.ecog_data_generator.standardize(x)
+            x = self.ecog_data_generator.random_transform(x, self.target_size)
+            x = self.ecog_data_generator.standardize(x, self.target_size)
             batch_x[i] = x
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
