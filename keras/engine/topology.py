@@ -11,6 +11,7 @@ import copy
 import os
 import inspect
 from six.moves import zip
+import pdb
 
 from .. import backend as K
 from ..utils.io_utils import ask_to_proceed_with_overwrite
@@ -1717,7 +1718,7 @@ class Container(Layer):
             self.input_names.append(layer.name)
         for layer in self.output_layers:
             self.output_names.append(layer.name)
-
+        pdb.set_trace()
         self.internal_input_shapes = [x._keras_shape for x in self.inputs]
         self.internal_output_shapes = [x._keras_shape for x in self.outputs]
 
