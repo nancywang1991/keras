@@ -355,7 +355,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(256, 256), color_mode='rgb',
+                 target_size=(64, 1000, 1), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
@@ -371,7 +371,7 @@ class DirectoryIterator(Iterator):
         #                     '; expected "grayscale".')
         self.color_mode = color_mode
         self.dim_ordering = dim_ordering
-        self.image_shape = self.target_size 
+        self.image_shape = self.target_size
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
