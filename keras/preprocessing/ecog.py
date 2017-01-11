@@ -151,8 +151,6 @@ class EcogDataGenerator(object):
         if self.center:
             cutoff = (x.shape[-1]- target_size[-1])/2
             x = x[cutoff:-cutoff]
-        if self.preprocessing_function:
-            x = self.preprocessing_function(x)
         if self.rescale:
             x *= self.rescale
         # x is a single image, so it doesn't have image number at index 0
