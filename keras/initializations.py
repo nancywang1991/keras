@@ -5,6 +5,7 @@ from .utils.generic_utils import get_from_module
 
 
 def get_fans(shape, dim_ordering='th'):
+    print dim_ordering
     if len(shape) == 2:
         fan_in = shape[0]
         fan_out = shape[1]
