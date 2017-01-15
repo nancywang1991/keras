@@ -406,7 +406,7 @@ class Convolution2D(Layer):
             self.W_shape = (self.nb_row, self.nb_col, stack_size, self.nb_filter)
         else:
             raise Exception('Invalid dim_ordering: ' + self.dim_ordering)
-        self.W = self.init(self.W_shape, name='{}_W'.format(self.name))
+        self.W = self.init(self.W_shape, name='{}_W'.format(self.name), dim_ordering=self.dim_ordering)
         if self.bias:
             self.b = K.zeros((self.nb_filter,), name='{}_b'.format(self.name))
             self.trainable_weights = [self.W, self.b]
@@ -1153,7 +1153,7 @@ class Convolution3D(Layer):
         else:
             raise Exception('Invalid dim_ordering: ' + self.dim_ordering)
 
-        self.W = self.init(self.W_shape, name='{}_W'.format(self.name))
+        self.W = self.init(self.W_shape, name='{}_W'.format(self.name), dim_ordering=self.dim_ordering)
         if self.bias:
             self.b = K.zeros((self.nb_filter,), name='{}_b'.format(self.name))
             self.trainable_weights = [self.W, self.b]

@@ -104,4 +104,4 @@ def one(shape, name=None):
 
 def get(identifier, **kwargs):
     return get_from_module(identifier, globals(),
-                           'initialization', instantiate=True, kwargs=kwargs)
+                           'initialization', kwargs=kwargs)
