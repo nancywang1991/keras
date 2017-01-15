@@ -58,6 +58,7 @@ def glorot_normal(shape, name=None, dim_ordering='th'):
 def glorot_uniform(shape, name=None, dim_ordering='th'):
     fan_in, fan_out = get_fans(shape, dim_ordering=dim_ordering)
     s = np.sqrt(6. / (fan_in + fan_out))
+    print s
     return uniform(shape, s, name=name)
 
 
