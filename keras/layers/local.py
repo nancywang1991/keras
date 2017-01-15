@@ -112,7 +112,7 @@ class LocallyConnected1D(Layer):
         _, output_length, nb_filter = self.get_output_shape_for(input_shape)
 
         self.W_shape = (output_length, self.filter_length * input_dim, nb_filter)
-        self.W = self.init(self.W_shape, name='{}_W'.format(self.name))
+        self.W = self.init(self.W_shape, name='{}_W'.format(self.name), dim_ordering=self.dim_ordering)
         if self.bias:
             self.b = K.zeros((output_length, self.nb_filter), name='{}_b'.format(self.name))
             self.trainable_weights = [self.W, self.b]
@@ -306,7 +306,7 @@ class LocallyConnected2D(Layer):
         self.output_row = output_row
         self.output_col = output_col
         self.W_shape = (output_row * output_col, self.nb_row * self.nb_col * input_filter, nb_filter)
-        self.W = self.init(self.W_shape, name='{}_W'.format(self.name))
+        self.W = self.init(self.W_shape, name='{}_W'.format(self.name), dim_ordering=self.dim_ordering)
 
         if self.bias:
             self.b = K.zeros((output_row, output_col, nb_filter), name='{}_b'.format(self.name))
