@@ -69,7 +69,7 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = np.expand_dims(np.reshape(np.load(path), (8,8,1200)), -1)
+    signal = np.expand_dims(np.reshape(np.load(path), (8,8,1200)), 0)
     return signal
 
 
@@ -133,7 +133,7 @@ class Ecog3DDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(8,8, 1000, 1),
+                            target_size=(1, 8,8, 1000),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
@@ -149,7 +149,7 @@ class Ecog3DDataGenerator(object):
 
     def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-2]- target_size[-2])/2
+            cutoff = (x.shape[-1]- target_size[-1])/2
             x = x[:,:,cutoff:-cutoff]
 
         # x is a single image, so it doesn't have image number at index 0
@@ -192,12 +192,12 @@ class Ecog3DDataGenerator(object):
             noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
             x = x + noise
         if self.time_shift_range:
-            if target_size[-2]+self.time_shift_range > x.shape[-2]:
+            if target_size[-1]+self.time_shift_range > x.shape[-1]:
 
-                print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
+                print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
-            x = x[:,:, shift:(shift+target_size[-2])]
+            x = x[:,:, shift:(shift+target_size[-1])]
         return x
 
     def fit(self, X,
@@ -355,7 +355,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(64, 1000, 1), color_mode='rgb',
+                 target_size=(1,8,8, 1000), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,

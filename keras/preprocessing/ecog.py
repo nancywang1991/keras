@@ -189,14 +189,17 @@ class EcogDataGenerator(object):
 
     def random_transform(self, x, target_size):
         if self.gaussian_noise_range:
-            noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
-            x = x + noise
+            if np.random.randint(100)<25:
+                noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
+                x = x + noise
         if self.time_shift_range:
             if target_size[-2]+self.time_shift_range > x.shape[-2]:
-
                 print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
                 raise ValueError
-            shift = np.random.randint(self.time_shift_range)
+            if np.random.randint(100) < 25:
+                shift = np.random.randint(self.time_shift_range)
+            else:
+                shift = (x.shape[-2] - target_size[-2]) / 2
             x = x[:,shift:(shift+target_size[-2])]
         return x
 
