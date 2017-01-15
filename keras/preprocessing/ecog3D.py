@@ -150,7 +150,7 @@ class Ecog3DDataGenerator(object):
     def standardize(self, x, target_size):
         if self.center:
             cutoff = (x.shape[-1]- target_size[-1])/2
-            x = x[:,:,cutoff:-cutoff]
+            x = x[:,:,:,cutoff:-cutoff]
 
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
@@ -197,7 +197,7 @@ class Ecog3DDataGenerator(object):
                 print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
             shift = np.random.randint(self.time_shift_range)
-            x = x[:,:, shift:(shift+target_size[-1])]
+            x = x[:,:,:, shift:(shift+target_size[-1])]
         return x
 
     def fit(self, X,
