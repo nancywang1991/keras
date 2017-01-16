@@ -69,7 +69,7 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
 
-    signal = np.expand_dims(np.load(path),-1)
+    signal = np.expand_dims(np.load(path),0)
     return signal
 
 
@@ -116,11 +116,11 @@ class EcogDataGenerator(object):
         self.gaussian_noise_range = gaussian_noise_range
         self.time_shift_range = time_shift_range
 
-        if dim_ordering not in {'tf'}:
-            raise ValueError('dim_ordering should be "tf" (channel after row and '
+        if dim_ordering not in {'th'}:
+            raise ValueError('dim_ordering should be "th" (channel after row and '
                              'column) ', dim_ordering)
         self.dim_ordering = dim_ordering
-        if dim_ordering == 'tf':
+        if dim_ordering == 'th':
             self.channel_index = 1
             self.row_index = 2
 
@@ -133,7 +133,7 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(64, 1000, 1),
+                            target_size=(1, 64, 1000),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
@@ -358,7 +358,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(64, 1000, 1), color_mode='rgb',
+                 target_size=(1,64, 1000), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
