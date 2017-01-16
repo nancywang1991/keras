@@ -149,8 +149,8 @@ class EcogDataGenerator(object):
 
     def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-2]- target_size[-2])/2
-            x = x[:,cutoff:-cutoff]
+            cutoff = (x.shape[-1]- target_size[-1])/2
+            x = x[:,:,cutoff:-cutoff]
 
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
@@ -189,18 +189,18 @@ class EcogDataGenerator(object):
 
     def random_transform(self, x, target_size):
         if self.gaussian_noise_range:
-            if np.random.randint(100)<25:
+            if np.random.randint(100) < 25:
                 noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
                 x = x + noise
         if self.time_shift_range:
-            if target_size[-2]+self.time_shift_range > x.shape[-2]:
-                print("time shift must be less than %i" % (x.shape[-2]-target_size[-2]))
+            if target_size[-1]+self.time_shift_range > x.shape[-1]:
+                print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
             if np.random.randint(100) < 25:
                 shift = np.random.randint(self.time_shift_range)
             else:
-                shift = (x.shape[-2] - target_size[-2]) / 2
-            x = x[:,shift:(shift+target_size[-2])]
+                shift = (x.shape[-1] - target_size[-1]) / 2
+            x = x[:,:,shift:(shift+target_size[-1])]
         return x
 
     def fit(self, X,
