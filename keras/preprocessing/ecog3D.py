@@ -116,12 +116,15 @@ class Ecog3DDataGenerator(object):
         self.gaussian_noise_range = gaussian_noise_range
         self.time_shift_range = time_shift_range
 
-        if dim_ordering not in {'tf'}:
-            raise ValueError('dim_ordering should be "tf" (channel after row and '
+        if dim_ordering not in {'th'}:
+            raise ValueError('dim_ordering should be "th" (channel after row and '
                              'column) ', dim_ordering)
         self.dim_ordering = dim_ordering
         if dim_ordering == 'tf':
             self.channel_index = 4
+            self.row_index = 2
+        elif dim_ordering == 'th':
+            self.channel_index = 1
             self.row_index = 2
 
     def flow(self, X, y=None, batch_size=32, shuffle=True, seed=None,
