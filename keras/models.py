@@ -219,7 +219,7 @@ class Sequential(Model):
         The first layer passed to a Sequential model
         should have a defined input shape. What that
         means is that it should have received an `input_shape`
-        or `batch_input_shape` argument,
+        or `batch_input_shape` argument
         or for some type of layers (recurrent, Dense...)
         an `input_dim` argument.
 

@@ -175,7 +175,7 @@ def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
             if os.path.isfile(os.path.join(directory, f)) and re.match('([\w]+\.(?:' + ext + '))', f)]
 
 def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), **kwargs):
-    print(filepath)
+    #print(filepath)
     img = load_img(filepath, target_mode=target_mode, target_size=target_size)
     return img_to_array(img, dim_ordering=dim_ordering)
 
