@@ -14,6 +14,7 @@ import os
 import threading
 import warnings
 from .. import backend as K
+from ecogdeep.util.filter import butter_lowpass_filter
 import cPickle as pickle
 import pdb
 
@@ -68,8 +69,11 @@ def load_edf(path, channels=None):
         path: path to edf file
         channels: channels to keep
     '''
-
+    signal = np.load(path)
+    for c in xrange(signal.shape[0]):
+        signal[c] = butter_lowpass_filter(signal[c],200,1000)
     signal = np.expand_dims(np.reshape(np.load(path), (8,8,1200)), 0)
+
     return signal
 
 
