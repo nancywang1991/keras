@@ -14,6 +14,7 @@ import os
 import threading
 import warnings
 from .. import backend as K
+from ecogdeep.util.filter import butter_lowpass_filter
 import cPickle as pickle
 import pdb
 
@@ -70,6 +71,8 @@ def load_edf(path, channels=None):
     '''
 
     signal = np.expand_dims(np.load(path),0)
+    for c in xrange(signal.shape[1]):
+        signal[0,c] = butter_lowpass_filter(signal[:,c],200,1000)
     return signal
 
 
@@ -154,6 +157,7 @@ class EcogDataGenerator(object):
 
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
+
         if self.samplewise_center:
             x -= np.mean(x, axis=ecog_channel_index, keepdims=True)
         if self.samplewise_std_normalization:
