@@ -219,7 +219,7 @@ class EcogDataGenerator(object):
         f_hi = int(f_hi*(x.shape[1]/float(samp_rate)))
         f_lo = int(f_lo * (x.shape[1] / float(samp_rate)))
         freq = np.zeros(shape=(x.shape[0], f_hi-f_lo))
-        for c in x.shape[0]:
+        for c in xrange(x.shape[0]):
             freq[c,:] = ((np.fft.fft(x[c])) ** 2)[f_lo:f_hi]
         return freq
 
