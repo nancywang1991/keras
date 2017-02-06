@@ -471,8 +471,8 @@ class DirectoryIterator(Iterator):
             #pdb.set_trace()
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
-            if self.fft:
-                x = self.ecog_data_generator.freq_transform(x, self.f_lo, self.f_hi, self.samp_rate)
+            if self.ecog_data_generator.fft:
+                x = self.ecog_data_generator.freq_transform(x, self.ecog_data_generator.f_lo, self.ecog_data_generator.f_hi, self.ecog_data_generator.samp_rate)
             batch_x[i] = x
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
