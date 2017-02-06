@@ -37,6 +37,16 @@ def apply_transform(x, transform_matrix, channel_index=0, fill_mode='nearest', c
     x = np.rollaxis(x, 0, channel_index+1)
     return x
 
+
+def freq_transform(x, f_lo, f_hi, samp_rate):
+    f_hi = f_hi * (x.shape[2] / float(samp_rate))
+    f_lo = f_lo * (x.shape[2] / float(samp_rate))
+    freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi - f_lo))
+    for c in x.shape[0]:
+        for c2 in x.shape[1]:
+            freq[c, c2, :] = ((np.fft.fft(x[c, c2])) ** 2)[f_lo:f_hi]
+    return freq
+
 def array_to_img(x, dim_ordering='default', scale=True):
     from PIL import Image
     x = np.asarray(x)
@@ -109,6 +119,10 @@ class Ecog3DDataGenerator(object):
                  zca_whitening=False,
                  time_shift_range=None,
                  gaussian_noise_range=None,
+                 fft=False,
+                 f_lo=0,
+                 f_hi=0,
+                 samp_rate=1000,
                  center=True,
                  dim_ordering='default'):
         if dim_ordering == 'default':
@@ -119,6 +133,11 @@ class Ecog3DDataGenerator(object):
         self.principal_components = None
         self.gaussian_noise_range = gaussian_noise_range
         self.time_shift_range = time_shift_range
+        self.f_lo=f_lo
+        self.f_hi=f_hi
+        self.samp_rate=samp_rate
+        self.fft=fft
+
 
         if dim_ordering not in {'th'}:
             raise ValueError('dim_ordering should be "th" (channel after row and '
@@ -347,6 +366,8 @@ class NumpyArrayIterator(Iterator):
             x = self.X[j]
             x = self.ecog_data_generator.random_transform(x.astype('float32'))
             x = self.ecog_data_generator.standardize(x)
+            if self.fft:
+                x = self.ecog_data_generator.freq_transform(x, self.f_lo, self.f_hi, self.samp_rate)
             batch_x[i] = x
         if self.save_to_dir:
             for i in range(current_batch_size):
