@@ -215,7 +215,7 @@ class EcogDataGenerator(object):
             x = x[:,:,shift:(shift+target_size[-1])]
         return x
 
-    def freq_transform(x, f_lo,f_hi, samp_rate):
+    def freq_transform(self, x, f_lo,f_hi, samp_rate):
         f_hi = f_hi*(x.shape[1]/float(samp_rate))
         f_lo = f_lo * (x.shape[1] / float(samp_rate))
         freq = np.zeros(shape=(x.shape[0], f_hi-f_lo))

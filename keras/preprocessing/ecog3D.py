@@ -38,14 +38,6 @@ def apply_transform(x, transform_matrix, channel_index=0, fill_mode='nearest', c
     return x
 
 
-def freq_transform(x, f_lo, f_hi, samp_rate):
-    f_hi = f_hi * (x.shape[2] / float(samp_rate))
-    f_lo = f_lo * (x.shape[2] / float(samp_rate))
-    freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi - f_lo))
-    for c in x.shape[0]:
-        for c2 in x.shape[1]:
-            freq[c, c2, :] = ((np.fft.fft(x[c, c2])) ** 2)[f_lo:f_hi]
-    return freq
 
 def array_to_img(x, dim_ordering='default', scale=True):
     from PIL import Image
@@ -157,6 +149,15 @@ class Ecog3DDataGenerator(object):
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             dim_ordering=self.dim_ordering,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
+
+    def freq_transform(self, x, f_lo, f_hi, samp_rate):
+        f_hi = f_hi * (x.shape[2] / float(samp_rate))
+        f_lo = f_lo * (x.shape[2] / float(samp_rate))
+        freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi - f_lo))
+        for c in x.shape[0]:
+            for c2 in x.shape[1]:
+                freq[c, c2, :] = ((np.fft.fft(x[c, c2])) ** 2)[f_lo:f_hi]
+        return freq
 
     def flow_from_directory(self, directory,
                             target_size=(1,8,8, 1000),
