@@ -151,8 +151,8 @@ class Ecog3DDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def freq_transform(self, x, f_lo, f_hi, samp_rate):
-        f_hi = f_hi * (x.shape[2] / float(samp_rate))
-        f_lo = f_lo * (x.shape[2] / float(samp_rate))
+        f_hi = int(f_hi * (x.shape[2] / float(samp_rate)))
+        f_lo = int(f_lo * (x.shape[2] / float(samp_rate)))
         freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi - f_lo))
         for c in x.shape[0]:
             for c2 in x.shape[1]:
