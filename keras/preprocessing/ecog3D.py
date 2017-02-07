@@ -388,7 +388,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(1,8,8, 1000), color_mode='rgb',
+                 target_size=(1,8,8, 1000), final_size=(1,8,8, 1000), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
@@ -399,6 +399,7 @@ class DirectoryIterator(Iterator):
         self.directory = directory
         self.ecog_data_generator = EcogDataGenerator
         self.target_size = tuple(target_size)
+        self.final_size = tuple(final_size)
         #if color_mode not in {'grayscale'}:
         #    raise ValueError('Invalid color mode:', color_mode,
         #                     '; expected "grayscale".')
