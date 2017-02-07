@@ -116,6 +116,7 @@ class Ecog3DDataGenerator(object):
                  f_hi=0,
                  samp_rate=1000,
                  center=True,
+
                  dim_ordering='default'):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
@@ -160,14 +161,14 @@ class Ecog3DDataGenerator(object):
         return freq
 
     def flow_from_directory(self, directory,
-                            target_size=(1,8,8, 1000),
+                            target_size=(1,8,8, 1000), final_size=(1,8,8, 1000),
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
                             follow_links=False):
         return DirectoryIterator(
             directory, self,
-            target_size=target_size, color_mode=color_mode,
+            target_size=target_size, final_size=final_size, color_mode=color_mode,
             classes=classes, class_mode=class_mode,
             dim_ordering=self.dim_ordering,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
@@ -362,7 +363,7 @@ class NumpyArrayIterator(Iterator):
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock so it can be done in parallel
-        batch_x = np.zeros(tuple([current_batch_size] + list(self.X.shape)[1:]))
+        batch_x = np.zeros(tuple([current_batch_size] + list(self.final_size)[1:]))
         for i, j in enumerate(index_array):
             x = self.X[j]
             x = self.ecog_data_generator.random_transform(x.astype('float32'))
