@@ -397,7 +397,7 @@ class DirectoryIterator(Iterator):
         #                     '; expected "grayscale".')
         self.color_mode = color_mode
         self.dim_ordering = dim_ordering
-        self.image_shape = self.target_size
+        self.image_shape = self.final_size
         self.classes = classes
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
