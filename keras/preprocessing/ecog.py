@@ -216,11 +216,11 @@ class EcogDataGenerator(object):
         return x
 
     def freq_transform(self, x, f_lo,f_hi, samp_rate):
-        f_hi = int(f_hi*(x.shape[1]/float(samp_rate)))
-        f_lo = int(f_lo * (x.shape[1] / float(samp_rate)))
-        freq = np.zeros(shape=(x.shape[0], f_hi-f_lo))
-        for c in xrange(x.shape[0]):
-            freq[c,:] = ((np.fft.fft(x[c])) ** 2)[f_lo:f_hi]
+        f_hi = int(f_hi*(x.shape[-1]/float(samp_rate)))
+        f_lo = int(f_lo * (x.shape[-1] / float(samp_rate)))
+        freq = np.zeros(shape=(x.shape[1], f_hi-f_lo))
+        for c in xrange(x.shape[1]):
+            freq[0,c,:] = ((np.fft.fft(x[0,c])) ** 2)[f_lo:f_hi]
         return freq
 
     def fit(self, X,

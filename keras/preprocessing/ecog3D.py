@@ -151,12 +151,12 @@ class Ecog3DDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def freq_transform(self, x, f_lo, f_hi, samp_rate):
-        f_hi = int(f_hi * (x.shape[2] / float(samp_rate)))
-        f_lo = int(f_lo * (x.shape[2] / float(samp_rate)))
-        freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi - f_lo))
-        for c in xrange(x.shape[0]):
-            for c2 in xrange(x.shape[1]):
-                freq[c, c2, :] = ((np.fft.fft(x[c, c2])) ** 2)[f_lo:f_hi]
+        f_hi = int(f_hi * (x.shape[-1] / float(samp_rate)))
+        f_lo = int(f_lo * (x.shape[-1] / float(samp_rate)))
+        freq = np.zeros(shape=(x.shape[1], x.shape[2], f_hi - f_lo))
+        for c in xrange(x.shape[1]):
+            for c2 in xrange(x.shape[2]):
+                freq[0,c, c2, :] = ((np.fft.fft(x[0,c, c2])) ** 2)[f_lo:f_hi]
         return freq
 
     def flow_from_directory(self, directory,
