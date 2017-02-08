@@ -160,24 +160,30 @@ def img_to_array(img, dim_ordering=K.image_dim_ordering()):
     return x
 
 
-def load_img(path, target_mode=None, target_size=None):
+def load_img(path, target_mode=None, target_size=None, num_frames=4):
     from PIL import Image
     #print(path)
-    img = Image.open(path)
-    if target_mode:
-        img = img.convert(target_mode)
-    if target_size:
-        img = img.resize((target_size[1], target_size[0]))
-    return img
+    img_orig = Image.open(path)
+    imgs = []
+    width = img_orig.shape[0]/4
+    for i in xrange(num_frames):
+        imgs.append(img_orig[i*width:(i+1)*width])
+    for i,img in enumerate(imgs):
+        if target_mode:
+            imgs[i] = img.convert(target_mode)
+        if target_size:
+            imgs[i] = img.resize((target_size[1], target_size[0]))
+    return imgs
 
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
     return [os.path.join(directory, f) for f in os.listdir(directory)
             if os.path.isfile(os.path.join(directory, f)) and re.match('([\w]+\.(?:' + ext + '))', f)]
 
-def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), **kwargs):
-    #print(filepath)
-    img = load_img(filepath, target_mode=target_mode, target_size=target_size)
-    return img_to_array(img, dim_ordering=dim_ordering)
+def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), num_frames=1,**kwargs):
+    imgs = load_img(filepath, target_mode=target_mode, target_size=target_size, num_frames=num_frames)
+    for i,img in enumerate(imgs):
+        imgs[i] = img_to_array(img, dim_ordering=dim_ordering)
+    return imgs
 
 def standardize(x,
                 dim_ordering='th',
@@ -460,6 +466,7 @@ class ImageDataGenerator(object):
             `flow_from_directory` to generate the shuffle index in case of no seed is set.
     '''
     def __init__(self,
+                 num_frames=1,
                  featurewise_center=False,
                  samplewise_center=False,
                  featurewise_std_normalization=False,
@@ -537,7 +544,7 @@ class ImageDataGenerator(object):
             save_mode=save_mode, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            color_mode=None, target_size=None,
+                            color_mode=None, target_size=None, num_frames=1,
                             image_reader='pil', reader_config={'target_mode':'RGB', 'target_size':(256,256)},
                             read_formats={'png','jpg','jpeg','bmp'},
                             classes=None, class_mode='categorical',
@@ -546,7 +553,7 @@ class ImageDataGenerator(object):
                             save_mode=None, save_format='jpeg'):
         return DirectoryIterator(
             directory, self,
-            color_mode=color_mode, target_size=target_size,
+            color_mode=color_mode, target_size=target_size, num_frames=num_frames,
             image_reader=image_reader, reader_config=reader_config,
             read_formats=read_formats,
             classes=classes, class_mode=class_mode,
@@ -722,7 +729,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, image_data_generator,
-                 color_mode=None, target_size=None,
+                 color_mode=None, target_size=None, num_frames=1,
                  image_reader="pil", read_formats={'png','jpg','jpeg','bmp'},
                  reader_config={'target_mode': 'RGB', 'target_size':None},
                  dim_ordering=K.image_dim_ordering,
@@ -733,6 +740,7 @@ class DirectoryIterator(Iterator):
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.image_reader = image_reader
+        self.num_frames=num_frames
         if self.image_reader == 'pil':
             self.image_reader = pil_image_reader
         self.reader_config = reader_config
@@ -867,18 +875,25 @@ class DirectoryIterator(Iterator):
             batch_x = None
             # build batch of image data
             for i, j in enumerate(index_array):
+                pdb.set_trace()
                 fname = self.filenames[j]
-                x = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
-                if x.ndim == 2:
-                    x = np.expand_dims(x, axis=0)
-                x = self.image_data_generator.process(x)
+                xs = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
+                if xs.ndim == 3:
+                    for x, img in enumerate(xs):
+                        xs[x] = np.expand_dims(img, axis=0)
+                for x, img in enumerate(xs):
+                    xs[x] = self.image_data_generator.process(img)
                 if i == 0:
-                    batch_x = np.zeros((current_batch_size,) + x.shape)
-                batch_x[i] = x
+                    batch_x = []
+                    for f in xrange(self.num_frames):
+                        batch_x.append(np.zeros((current_batch_size,) + x[0].shape))
+                for f in xrange(self.num_frames):
+                    batch_x[f][i]=xs[f]
+
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.dim_ordering, mode=self.save_mode, scale=True)
+                img = array_to_img(batch_x[0][i], self.dim_ordering, mode=self.save_mode, scale=True)
                 fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
                                                                   index=current_index + i,
                                                                   hash=np.random.randint(1e4),
@@ -890,10 +905,13 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype('float32')
         elif self.class_mode == 'categorical':
-            batch_y = np.zeros((len(batch_x), self.nb_class), dtype='float32')
+            batch_y = np.zeros((len(batch_x[0]), self.nb_class), dtype='float32')
             for i, label in enumerate(self.classes[index_array]):
                 batch_y[i, label] = 1.
         else:
             return batch_x
-        return batch_x, batch_y
+        if self.num_frames>1:
+            return batch_x, batch_y
+        else:
+            return batch_x[0]
 
