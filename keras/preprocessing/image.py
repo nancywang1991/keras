@@ -167,7 +167,7 @@ def load_img(path, target_mode=None, target_size=None, num_frames=4):
     imgs = []
     width, height = img_orig.size
     for i in xrange(num_frames):
-        imgs.append(img_orig.crop(i*width,0,(i+1)*width, height))
+        imgs.append(img_orig.crop((i*width,0,(i+1)*width, height)))
     for i,img in enumerate(imgs):
         if target_mode:
             imgs[i] = img.convert(target_mode)
