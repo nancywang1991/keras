@@ -878,7 +878,7 @@ class DirectoryIterator(Iterator):
                 pdb.set_trace()
                 fname = self.filenames[j]
                 xs = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
-                if xs.ndim == 3:
+                if xs[0].ndim == 2:
                     for x, img in enumerate(xs):
                         xs[x] = np.expand_dims(img, axis=0)
                 for x, img in enumerate(xs):
