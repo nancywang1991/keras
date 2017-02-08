@@ -165,7 +165,7 @@ def load_img(path, target_mode=None, target_size=None, num_frames=4):
     #print(path)
     img_orig = Image.open(path)
     imgs = []
-    width = img_orig.shape[0]/4
+    width, height = img_orig.size
     for i in xrange(num_frames):
         imgs.append(img_orig[i*width:(i+1)*width])
     for i,img in enumerate(imgs):
