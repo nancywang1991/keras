@@ -296,9 +296,10 @@ def standardize(x,
 
 def center_crop(x, center_crop_size, **kwargs):
     #pdb.set_trace()
-    centerw, centerh = x.shape[0]//2, x.shape[1]//2
+    centerw, centerh = x.shape[1]//2, x.shape[2]//2
     halfw, halfh = center_crop_size[0]//2, center_crop_size[1]//2
-    return x[centerw-halfw:centerw+halfw,centerh-halfh:centerh+halfh, :]
+    oddw, oddh = center_crop_size[0]%2, center_crop_size[1]%2
+    return x[:,centerw-halfw:centerw+halfw+oddw,centerh-halfh:centerh+halfh+oddh]
 
 def random_crop(x, random_crop_size, sync_seed=None, **kwargs):
     np.random.seed(sync_seed)
