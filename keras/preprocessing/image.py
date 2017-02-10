@@ -167,7 +167,7 @@ def load_img(path, target_mode=None, target_size=None, num_frames=4):
     imgs = []
     width, height = img_orig.size
     for i in xrange(num_frames):
-        imgs.append(img_orig.crop((i*width,0,(i+1)*width, height)))
+        imgs.append(img_orig.crop((i*width/num_frames,0,(i+1)*width/num_frames, height)))
     for i,img in enumerate(imgs):
         if target_mode:
             imgs[i] = img.convert(target_mode)
@@ -886,7 +886,7 @@ class DirectoryIterator(Iterator):
                 if i == 0:
                     batch_x = []
                     for f in xrange(self.num_frames):
-                        batch_x.append(np.zeros((current_batch_size,) + x[0].shape))
+                        batch_x.append(np.zeros((current_batch_size,) + xs[0].shape))
                 for f in xrange(self.num_frames):
                     batch_x[f][i]=xs[f]
 
