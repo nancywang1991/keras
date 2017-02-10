@@ -160,7 +160,7 @@ def img_to_array(img, dim_ordering=K.image_dim_ordering()):
     return x
 
 
-def load_img(path, target_mode=None, target_size=None, num_frames=4):
+def load_img(path, target_mode=None, target_size=None, num_frames=1):
     from PIL import Image
     #print(path)
     img_orig = Image.open(path)
@@ -755,6 +755,7 @@ class DirectoryIterator(Iterator):
 
         self.dim_ordering = dim_ordering
         self.reader_config['dim_ordering'] = dim_ordering
+        self.reader_config['num_frames'] = num_frames
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
                              '; expected one of "categorical", '
