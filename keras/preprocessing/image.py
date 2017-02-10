@@ -877,7 +877,6 @@ class DirectoryIterator(Iterator):
             batch_x = None
             # build batch of image data
             for i, j in enumerate(index_array):
-                pdb.set_trace()
                 fname = self.filenames[j]
                 xs = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
                 if xs[0].ndim == 2:
