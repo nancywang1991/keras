@@ -552,7 +552,7 @@ class ImageDataGenerator(object):
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='',
-                            save_mode=None, save_format='jpeg'):
+                            save_mode=None, save_format='jpeg', pre_shuffle_ind=None):
         return DirectoryIterator(
             directory, self,
             color_mode=color_mode, target_size=target_size, num_frames=num_frames,
@@ -562,7 +562,7 @@ class ImageDataGenerator(object):
             dim_ordering=self.config['dim_ordering'],
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             save_to_dir=save_to_dir, save_prefix=save_prefix,
-            save_mode=save_mode, save_format=save_format)
+            save_mode=save_mode, save_format=save_format, pre_shuffle_ind=pre_shuffle_ind)
 
     def process(self, x):
         # get next sync_seed
@@ -608,7 +608,7 @@ class ImageDataGenerator(object):
 
 class Iterator(object):
 
-    def __init__(self, N, batch_size, shuffle, seed):
+    def __init__(self, N, batch_size, shuffle, seed, pre_shuffle_ind):
         self.N = N
         self.batch_size = batch_size
         self.shuffle = shuffle
@@ -616,12 +616,12 @@ class Iterator(object):
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
-        self.index_generator = self._flow_index(N, batch_size, shuffle, seed)
+        self.index_generator = self._flow_index(N, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def reset(self):
         self.batch_index = 0
 
-    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None):
+    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None, pre_shuffle_ind=None):
         # ensure self.batch_index is 0
         self.reset()
         while 1:
@@ -633,7 +633,8 @@ class Iterator(object):
                     self.index_array = np.random.permutation(N)
                     if seed is not None:
                         np.random.seed()
-
+                if pre_shuffle_ind is not None:
+                    self.index_array = pre_shuffle_ind
             current_index = (self.batch_index * batch_size) % N
             if N >= current_index + batch_size:
                 current_batch_size = batch_size
@@ -738,7 +739,7 @@ class DirectoryIterator(Iterator):
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='',
-                 save_mode=None, save_format='jpeg'):
+                 save_mode=None, save_format='jpeg', pre_shuffle_ind=None):
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.image_reader = image_reader
@@ -821,7 +822,7 @@ class DirectoryIterator(Iterator):
         self.reader_config['nb_sample'] = self.nb_sample
         self.reader_config['seed'] = seed
         self.reader_config['sync_seed'] = self.image_data_generator.sync_seed
-        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
+        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
         if inspect.isgeneratorfunction(self.image_reader):
             self._reader_generator_mode = True
             self._reader_generator = []

@@ -153,7 +153,7 @@ class EcogDataGenerator(object):
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
-                            follow_links=False):
+                            follow_links=False, pre_shuffle_ind = None):
         return DirectoryIterator(
             directory, self,
             target_size=target_size, final_size=final_size, color_mode=color_mode,
@@ -161,7 +161,7 @@ class EcogDataGenerator(object):
             dim_ordering=self.dim_ordering,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
-            follow_links=follow_links)
+            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind)
 
     def standardize(self, x, target_size):
         if self.center:
@@ -284,19 +284,19 @@ class EcogDataGenerator(object):
 
 class Iterator(object):
 
-    def __init__(self, N, batch_size, shuffle, seed):
+    def __init__(self, N, batch_size, shuffle, seed, pre_shuffle_ind):
         self.N = N
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
-        self.index_generator = self._flow_index(N, batch_size, shuffle, seed)
+        self.index_generator = self._flow_index(N, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def reset(self):
         self.batch_index = 0
 
-    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None):
+    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None, pre_shuffle_ind=None):
         # ensure self.batch_index is 0
         self.reset()
         while 1:
@@ -306,6 +306,8 @@ class Iterator(object):
                 index_array = np.arange(N)
                 if shuffle:
                     index_array = np.random.permutation(N)
+                if pre_shuffle_ind is not None:
+                    index_array=pre_shuffle_ind
 
             current_index = (self.batch_index * batch_size) % N
             if N >= current_index + batch_size:
@@ -390,7 +392,7 @@ class DirectoryIterator(Iterator):
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='', save_format='jpeg',
-                 follow_links=False):
+                 follow_links=False, pre_shuffle_ind=None):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.directory = directory
@@ -461,7 +463,7 @@ class DirectoryIterator(Iterator):
                         # add filename relative to directory
                         absolute_path = os.path.join(root, fname)
                         self.filenames.append(os.path.relpath(absolute_path, directory))
-        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
+        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def next(self):
         #pdb.set_trace()
