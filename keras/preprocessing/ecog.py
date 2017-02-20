@@ -71,8 +71,13 @@ def load_edf(path, channels=None):
     '''
 
     signal = np.expand_dims(np.load(path),0)
+    #pdb.set_trace()
     for c in xrange(signal.shape[1]):
-        signal[0,c] = butter_lowpass_filter(signal[:,c],200,1000)
+        try:
+            signal[0,c] = butter_lowpass_filter(signal[:,c],200,1000)
+	except:
+	    print(path)
+	    pdb.set_trace()
     return signal
 
 

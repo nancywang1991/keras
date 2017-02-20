@@ -161,7 +161,7 @@ def img_to_array(img, dim_ordering=K.image_dim_ordering()):
 
 
 def load_img(path, target_mode=None, target_size=None, num_frames=1):
-    from PIL import Image
+    from PIL import Image, ImageChops
     #print(path)
     img_orig = Image.open(path)
     imgs = []
@@ -173,7 +173,8 @@ def load_img(path, target_mode=None, target_size=None, num_frames=1):
             imgs[i] = img.convert(target_mode)
         if target_size:
             imgs[i] = img.resize((target_size[1], target_size[0]))
-    return imgs
+    imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
+    return [imgs[0], imgs[-1]]
 
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
     return [os.path.join(directory, f) for f in os.listdir(directory)
@@ -879,16 +880,17 @@ class DirectoryIterator(Iterator):
             for i, j in enumerate(index_array):
                 fname = self.filenames[j]
                 xs = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
-                if xs[0].ndim == 2:
+                use_frames = len(xs)
+		if xs[0].ndim == 2:
                     for x, img in enumerate(xs):
                         xs[x] = np.expand_dims(img, axis=0)
                 for x, img in enumerate(xs):
                     xs[x] = self.image_data_generator.process(img)
                 if i == 0:
                     batch_x = []
-                    for f in xrange(self.num_frames):
+                    for f in xrange(use_frames):
                         batch_x.append(np.zeros((current_batch_size,) + xs[0].shape))
-                for f in xrange(self.num_frames):
+                for f in xrange(use_frames):
                     batch_x[f][i]=xs[f]
 
         # optionally save augmented images to disk for debugging purposes
