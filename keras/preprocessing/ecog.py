@@ -118,7 +118,8 @@ class EcogDataGenerator(object):
                  f_hi = 0,
                  samp_rate = 1000,
                  center=True,
-                 dim_ordering='default'):
+                 dim_ordering='default',
+                 seq_len=None, seq_start=None, seq_num=None, seq_st=None):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.__dict__.update(locals())
@@ -131,6 +132,10 @@ class EcogDataGenerator(object):
         self.f_hi=f_hi
         self.samp_rate=samp_rate
         self.fft=fft
+        self.seq_len = seq_len
+        self.seq_start = seq_start
+        self.seq_num = seq_num
+        self.seq_st = seq_st
 
         if dim_ordering not in {'th'}:
             raise ValueError('dim_ordering should be "th" (channel after row and '
@@ -202,6 +207,11 @@ class EcogDataGenerator(object):
                               '`zca_whitening`, but it hasn\'t'
                               'been fit on any training data. Fit it '
                               'first by calling `.fit(numpy_data)`.')
+        if self.seq_len:
+            x_temp = np.zeros(shape=(self.seq_num, x.shape[0],x.shape[1], self.seq_len))
+            for i in xrange(self.seq_num):
+                x_temp[i] = x[:,:,(self.seq_start+i*self.seq_st):(self.seq_start+i*self.seq_st + self.seq_len)]
+            x= x_temp
         return x
 
     def random_transform(self, x, target_size):
@@ -306,9 +316,9 @@ class Iterator(object):
                 index_array = np.arange(N)
                 if shuffle:
                     index_array = np.random.permutation(N)
-                if pre_shuffle_ind is not None:
-                    index_array=pre_shuffle_ind
-
+            if pre_shuffle_ind is not None:
+                np.random.seed(self.total_batches_seen)
+                self.index_array = np.random.permutation(N)
             current_index = (self.batch_index * batch_size) % N
             if N >= current_index + batch_size:
                 current_batch_size = batch_size
