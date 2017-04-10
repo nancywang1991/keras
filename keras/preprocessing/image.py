@@ -176,6 +176,21 @@ def load_img(path, target_mode=None, target_size=None, num_frames=1, frame_ind=0
     imgs[frame_ind] = ImageChops.subtract(imgs[frame_ind],imgs[frame_ind+1])
     return [imgs[frame_ind], imgs[frame_ind+1]]
 
+def load_img_seq(path, target_mode=None, target_size=None, num_frames=1, keep_frames=None):
+    from PIL import Image, ImageChops
+    #print(path)
+    img_orig = Image.open(path)
+    imgs = []
+    width, height = img_orig.size
+    for i in xrange(num_frames):
+        imgs.append(img_orig.crop((i*width/num_frames,0,(i+1)*width/num_frames, height)))
+    for f in keep_frames:
+        if target_mode:
+            imgs[f] = imgs[f].convert(target_mode)
+        if target_size:
+            imgs[f] = imgs[f].resize((target_size[1], target_size[0]))
+    return imgs[keep_frames]
+
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
     return [os.path.join(directory, f) for f in os.listdir(directory)
             if os.path.isfile(os.path.join(directory, f)) and re.match('([\w]+\.(?:' + ext + '))', f)]
@@ -890,9 +905,9 @@ class DirectoryIterator(Iterator):
                 fname = self.filenames[j]
                 xs = self.image_reader(os.path.join(self.directory, fname), **self.reader_config)
                 use_frames = len(xs)
-		if xs[0].ndim == 2:
-                    for x, img in enumerate(xs):
-                        xs[x] = np.expand_dims(img, axis=0)
+            if xs[0].ndim == 2:
+                for x, img in enumerate(xs):
+                    xs[x] = np.expand_dims(img, axis=0)
                 for x, img in enumerate(xs):
                     xs[x] = self.image_data_generator.process(img)
                 if i == 0:
