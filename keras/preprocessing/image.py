@@ -160,7 +160,7 @@ def img_to_array(img, dim_ordering=K.image_dim_ordering()):
     return x
 
 
-def load_img(path, target_mode=None, target_size=None, num_frames=1):
+def load_img(path, target_mode=None, target_size=None, num_frames=1, frame_ind=0):
     from PIL import Image, ImageChops
     #print(path)
     img_orig = Image.open(path)
@@ -173,15 +173,15 @@ def load_img(path, target_mode=None, target_size=None, num_frames=1):
             imgs[i] = img.convert(target_mode)
         if target_size:
             imgs[i] = img.resize((target_size[1], target_size[0]))
-    imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
-    return [imgs[0], imgs[-1]]
+    imgs[frame_ind] = ImageChops.subtract(imgs[frame_ind],imgs[frame_ind+1])
+    return [imgs[frame_ind], imgs[frame_ind+1]]
 
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
     return [os.path.join(directory, f) for f in os.listdir(directory)
             if os.path.isfile(os.path.join(directory, f)) and re.match('([\w]+\.(?:' + ext + '))', f)]
 
-def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), num_frames=1,**kwargs):
-    imgs = load_img(filepath, target_mode=target_mode, target_size=target_size, num_frames=num_frames)
+def pil_image_reader(filepath, target_mode=None, target_size=None, dim_ordering=K.image_dim_ordering(), num_frames=1,frame_ind=0,**kwargs):
+    imgs = load_img(filepath, target_mode=target_mode, target_size=target_size, num_frames=num_frames, frame_ind=frame_ind)
     for i,img in enumerate(imgs):
         imgs[i] = img_to_array(img, dim_ordering=dim_ordering)
     return imgs
@@ -296,7 +296,6 @@ def standardize(x,
     return x
 
 def center_crop(x, center_crop_size, **kwargs):
-    #pdb.set_trace()
     centerw, centerh = x.shape[1]//2, x.shape[2]//2
     halfw, halfh = center_crop_size[0]//2, center_crop_size[1]//2
     oddw, oddh = center_crop_size[0]%2, center_crop_size[1]%2
@@ -469,6 +468,7 @@ class ImageDataGenerator(object):
     '''
     def __init__(self,
                  num_frames=1,
+                 frame_ind=0,
                  featurewise_center=False,
                  samplewise_center=False,
                  featurewise_std_normalization=False,
@@ -546,17 +546,18 @@ class ImageDataGenerator(object):
             save_mode=save_mode, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            color_mode=None, target_size=None, num_frames=1,
-                            image_reader='pil', reader_config={'target_mode':'RGB', 'target_size':(256,256)},
+                            color_mode=None, target_size=None, num_frames=1, frame_ind=0,
+                            image_reader='pil', this_reader_config={'target_mode':'RGB', 'target_size':(256,256)},
                             read_formats={'png','jpg','jpeg','bmp'},
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='',
                             save_mode=None, save_format='jpeg', pre_shuffle_ind=None):
+        #pdb.set_trace()
         return DirectoryIterator(
             directory, self,
-            color_mode=color_mode, target_size=target_size, num_frames=num_frames,
-            image_reader=image_reader, reader_config=reader_config,
+            color_mode=color_mode, target_size=target_size, num_frames=num_frames, frame_ind=frame_ind,
+            image_reader=image_reader, reader_config=this_reader_config,
             read_formats=read_formats,
             classes=classes, class_mode=class_mode,
             dim_ordering=self.config['dim_ordering'],
@@ -732,7 +733,7 @@ class NumpyArrayIterator(Iterator):
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, image_data_generator,
-                 color_mode=None, target_size=None, num_frames=1,
+                 color_mode=None, target_size=None, num_frames=1, frame_ind=0,
                  image_reader="pil", read_formats={'png','jpg','jpeg','bmp'},
                  reader_config={'target_mode': 'RGB', 'target_size':None},
                  dim_ordering=K.image_dim_ordering,
@@ -740,10 +741,13 @@ class DirectoryIterator(Iterator):
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='',
                  save_mode=None, save_format='jpeg', pre_shuffle_ind=None):
+        #pdb.set_trace()
         self.directory = directory
         self.image_data_generator = image_data_generator
         self.image_reader = image_reader
         self.num_frames=num_frames
+        self.frame_ind = frame_ind
+        #pdb.set_trace()
         if self.image_reader == 'pil':
             self.image_reader = pil_image_reader
         self.reader_config = reader_config
@@ -759,6 +763,7 @@ class DirectoryIterator(Iterator):
         self.dim_ordering = dim_ordering
         self.reader_config['dim_ordering'] = dim_ordering
         self.reader_config['num_frames'] = num_frames
+	self.reader_config['frame_ind'] = frame_ind
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
                              '; expected one of "categorical", '
@@ -803,7 +808,7 @@ class DirectoryIterator(Iterator):
         i = 0
         for subdir in classes:
             subpath = os.path.join(directory, subdir)
-            for fname in os.listdir(subpath):
+            for fname in sorted(os.listdir(subpath)):
                 is_valid = False
                 for extension in read_formats:
                     if fname.lower().endswith('.' + extension):
@@ -815,11 +820,13 @@ class DirectoryIterator(Iterator):
                     i += 1
 
         assert len(self.filenames)>0, 'No valid file is found in the target directory.'
+        #pdb.set_trace()
         self.reader_config['class_mode'] = self.class_mode
         self.reader_config['classes'] = self.classes
         self.reader_config['filenames'] = self.filenames
         self.reader_config['directory'] = self.directory
         self.reader_config['nb_sample'] = self.nb_sample
+        self.reader_config['frame_ind'] = self.frame_ind
         self.reader_config['seed'] = seed
         self.reader_config['sync_seed'] = self.image_data_generator.sync_seed
         super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
@@ -846,6 +853,7 @@ class DirectoryIterator(Iterator):
         return super(DirectoryIterator, self).__add__(it)
 
     def next(self):
+        #pdb.set_trace()
         self.reader_config['sync_seed'] = self.image_data_generator.sync_seed
         if self._reader_generator_mode:
             sampleCount = 0

@@ -14,7 +14,7 @@ import os
 import threading
 import warnings
 from .. import backend as K
-from ecogdeep.util.filter import butter_lowpass_filter
+from ecogdeep.util.filter import butter_bandpass_filter
 import cPickle as pickle
 import pdb
 
@@ -62,23 +62,22 @@ def array_to_img(x, dim_ordering='default', scale=True):
         x *= 255
     return Image.fromarray(x[:, :].astype('uint8'), 'L')
 
-def load_edf(path, channels=None):
+def load_edf(path, start_time, channels=None):
     '''Load an edf into numpy format.
 
     # Arguments
         path: path to edf file
         channels: channels to keep
     '''
-
-    signal = np.expand_dims(np.load(path),0)
-    #pdb.set_trace()
-    for c in xrange(signal.shape[1]):
+    signal = np.expand_dims(np.load(path)[:,start_time:],0)
+    for c in channels:#xrange(signal.shape[1]):
         try:
-            signal[0,c] = butter_lowpass_filter(signal[:,c],200,1000)
+            signal[0,c] = butter_bandpass_filter(signal[:,c],10,200, 1000) 
+            signal[0,c] = (signal[0,c] - np.mean(signal[:,c]))/np.std(signal[:,c])
 	except:
 	    print(path)
-	    pdb.set_trace()
-    return signal
+	    pass
+    return signal[:,channels]
 
 
 def list_edfs(directory, ext='npy'):
@@ -118,7 +117,8 @@ class EcogDataGenerator(object):
                  f_hi = 0,
                  samp_rate = 1000,
                  center=True,
-                 dim_ordering='default'):
+                 dim_ordering='default',
+                 start_time = 0):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.__dict__.update(locals())
@@ -131,6 +131,7 @@ class EcogDataGenerator(object):
         self.f_hi=f_hi
         self.samp_rate=samp_rate
         self.fft=fft
+        self.start_time=start_time
 
         if dim_ordering not in {'th'}:
             raise ValueError('dim_ordering should be "th" (channel after row and '
@@ -153,7 +154,7 @@ class EcogDataGenerator(object):
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
-                            follow_links=False, pre_shuffle_ind = None):
+                            follow_links=False, pre_shuffle_ind = None, channels=None):
         return DirectoryIterator(
             directory, self,
             target_size=target_size, final_size=final_size, color_mode=color_mode,
@@ -161,7 +162,7 @@ class EcogDataGenerator(object):
             dim_ordering=self.dim_ordering,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
-            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind)
+            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind, channels=channels)
 
     def standardize(self, x, target_size):
         if self.center:
@@ -225,7 +226,7 @@ class EcogDataGenerator(object):
         f_lo = int(f_lo * (x.shape[-1] / float(samp_rate)))
         freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi-f_lo))
         for c in xrange(x.shape[1]):
-            freq[0,c,:] = ((np.fft.fft(x[0,c])) ** 2)[f_lo:f_hi]
+            freq[0,c,:] = (np.abs((np.fft.fft(x[0,c])) ** 2))[f_lo:f_hi]
         return freq
 
     def fit(self, X,
@@ -303,11 +304,11 @@ class Iterator(object):
             if seed is not None:
                 np.random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
-                index_array = np.arange(N)
+                self.index_array = np.arange(N)
                 if shuffle:
-                    index_array = np.random.permutation(N)
+                    self.index_array = np.random.permutation(N)
                 if pre_shuffle_ind is not None:
-                    index_array=pre_shuffle_ind
+                    self.index_array=pre_shuffle_ind
 
             current_index = (self.batch_index * batch_size) % N
             if N >= current_index + batch_size:
@@ -317,7 +318,7 @@ class Iterator(object):
                 current_batch_size = N - current_index
                 self.batch_index = 0
             self.total_batches_seen += 1
-            yield (index_array[current_index: current_index + current_batch_size],
+            yield (self.index_array[current_index: current_index + current_batch_size],
                    current_index, current_batch_size)
 
     def __iter__(self):
@@ -392,7 +393,7 @@ class DirectoryIterator(Iterator):
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='', save_format='jpeg',
-                 follow_links=False, pre_shuffle_ind=None):
+                 follow_links=False, pre_shuffle_ind=None, start_time=0, channels=None):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.directory = directory
@@ -406,6 +407,7 @@ class DirectoryIterator(Iterator):
         self.dim_ordering = dim_ordering
         self.image_shape = self.final_size
         self.classes = classes
+        self.channels = channels
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
                              '; expected one of "categorical", '
@@ -451,7 +453,7 @@ class DirectoryIterator(Iterator):
         for subdir in classes:
             subpath = os.path.join(directory, subdir)
             for root, dirs, files in _recursive_list(subpath):
-                for fname in files:
+                for fname in sorted(files):
                     is_valid = False
                     for extension in white_list_formats:
                         if fname.lower().endswith('.' + extension):
@@ -466,7 +468,6 @@ class DirectoryIterator(Iterator):
         super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def next(self):
-        #pdb.set_trace()
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock so it can be done in parallel
@@ -475,8 +476,7 @@ class DirectoryIterator(Iterator):
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            x = load_edf(os.path.join(self.directory, fname))
-            #pdb.set_trace()
+            x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels)
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
             if self.ecog_data_generator.fft:
