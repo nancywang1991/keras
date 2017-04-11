@@ -773,44 +773,41 @@ class DirectoryIterator(Iterator):
             for subdir in sorted(os.listdir(directory)):
                 if os.path.isdir(os.path.join(directory, subdir)):
                     classes.append(subdir)
-        self.num_class = len(classes)
+        # if no class is found, add '' for scanning the root folder
+        if class_mode is None and len(classes) == 0:
+            classes.append('')
+        self.nb_class = len(classes)
         self.class_indices = dict(zip(classes, range(len(classes))))
-
-        def _recursive_list(subpath):
-            return sorted(os.walk(subpath, followlinks=follow_links), key=lambda tpl: tpl[0])
 
         for subdir in classes:
             subpath = os.path.join(directory, subdir)
-            for root, _, files in _recursive_list(subpath):
-                for fname in files:
-                    is_valid = False
-                    for extension in white_list_formats:
-                        if fname.lower().endswith('.' + extension):
-                            is_valid = True
-                            break
-                    if is_valid:
-                        self.samples += 1
-        print('Found %d images belonging to %d classes.' % (self.samples, self.num_class))
+            for fname in os.listdir(subpath):
+                is_valid = False
+                for extension in white_list_formats:
+                    if fname.lower().endswith('.' + extension):
+                        is_valid = True
+                        break
+                if is_valid:
+                    self.nb_sample += 1
+        print('Found %d images belonging to %d classes.' % (self.nb_sample, self.nb_class))
 
         # second, build an index of the images in the different class subfolders
         self.filenames = []
-        self.classes = np.zeros((self.samples,), dtype='int32')
+        self.classes = np.zeros((self.nb_sample,), dtype='int32')
         i = 0
         for subdir in classes:
             subpath = os.path.join(directory, subdir)
-            for root, _, files in _recursive_list(subpath):
-                for fname in files:
-                    is_valid = False
-                    for extension in white_list_formats:
-                        if fname.lower().endswith('.' + extension):
-                            is_valid = True
-                            break
-                    if is_valid:
-                        self.classes[i] = self.class_indices[subdir]
-                        i += 1
-                        # add filename relative to directory
-                        absolute_path = os.path.join(root, fname)
-                        self.filenames.append(os.path.relpath(absolute_path, directory))
+            for fname in sorted(os.listdir(subpath)):
+                is_valid = False
+                for extension in white_list_formats:
+                    if fname.lower().endswith('.' + extension):
+                        is_valid = True
+                        break
+                if is_valid:
+                    self.classes[i] = self.class_indices[subdir]
+                    self.filenames.append(os.path.join(subdir, fname))
+                    i += 1
+
         super(DirectoryIterator, self).__init__(self.samples, batch_size, shuffle, seed, pre_shuffle_ind=pre_shuffle_ind)
 
     def next(self):
