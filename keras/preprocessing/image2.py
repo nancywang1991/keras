@@ -351,7 +351,8 @@ class ImageDataGenerator(object):
                  preprocessing_function=None,
                  dim_ordering=None,
                  center_crop=None,
-                 random_crop=None):
+                 random_crop=None,
+                 keep_frames=None):
         if dim_ordering is None:
             dim_ordering = K.image_dim_ordering()
         self.featurewise_center = featurewise_center
@@ -373,6 +374,7 @@ class ImageDataGenerator(object):
         self.preprocessing_function = preprocessing_function
         self.center_crop = center_crop
         self.random_crop = random_crop
+        self.keep_frames = keep_frames
 
         if dim_ordering not in ['th', 'tf']:
             raise Exception('Unknown dim_ordering: ', dim_ordering)
@@ -826,7 +828,7 @@ class DirectoryIterator(Iterator):
             fname = self.filenames[j]
             if self.img_mode=="seq":
                 imgs = load_img_seq(os.path.join(self.directory, fname),
-                           resize_size=self.resize_size, num_frames=self.num_frames)
+                           resize_size=self.resize_size, num_frames=self.num_frames, keep_frames=self.image_data_generator.keep_frames)
             else:
                 imgs = load_img(os.path.join(self.directory, fname),
                            resize_size=self.resize_size, num_frames=self.num_frames)
