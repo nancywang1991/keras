@@ -822,7 +822,7 @@ class DirectoryIterator(Iterator):
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock
         # so it can be done in parallel
-        batch_x = np.zeros((current_batch_size,) + self.image_shape, dtype=K.floatx())
+        batch_x = None
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         for i, j in enumerate(index_array):
@@ -833,12 +833,16 @@ class DirectoryIterator(Iterator):
             else:
                 imgs = load_img(os.path.join(self.directory, fname),
                            resize_size=self.resize_size, num_frames=self.num_frames)
-            for i, img in enumerate(imgs):
-                imgs[i] = img_to_array(img, dim_ordering=K.image_dim_ordering())
-            x = img_to_array(img)
-            x = self.image_data_generator.random_transform(x)
-            x = self.image_data_generator.standardize(x)
-            batch_x[i] = x
+            use_frames = len(imgs)
+            for j, img in enumerate(imgs):
+                imgs[j] = img_to_array(img, dim_ordering=K.image_dim_ordering())
+                imgs[j] = self.image_data_generator.random_transform(imgs[j])
+                imgs[j] = self.image_data_generator.standardize(imgs[j])
+            if i == 0:
+                batch_x = []
+                for f in xrange(index_array):
+                        batch_x.append((len(imgs),) + imgs[0].shape)
+            batch_x[i] = imgs
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
