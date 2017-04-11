@@ -840,7 +840,7 @@ class DirectoryIterator(Iterator):
                 imgs[j] = self.image_data_generator.standardize(imgs[j])
             if i == 0:
                 batch_x = []
-                for f in xrange(index_array):
+                for f in xrange(len(index_array)):
                         batch_x.append((len(imgs),) + imgs[0].shape)
             batch_x[i] = imgs
         # optionally save augmented images to disk for debugging purposes
