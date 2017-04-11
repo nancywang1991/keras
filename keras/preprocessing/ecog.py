@@ -155,7 +155,7 @@ class EcogDataGenerator(object):
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
-                            target_size=(1, 64, 1000), final_size=(1, 64, 1000),
+                            target_size=None, final_size=None,
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
@@ -341,65 +341,11 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 
-class NumpyArrayIterator(Iterator):
-
-    def __init__(self, X, y, EcogDataGenerator,
-                 batch_size=32, shuffle=False, seed=None,
-                 dim_ordering='default',
-                 save_to_dir=None, save_prefix='', save_format='jpeg'):
-        if y is not None and len(X) != len(y):
-            raise ValueError('X (images tensor) and y (labels) '
-                             'should have the same length. '
-                             'Found: X.shape = %s, y.shape = %s' % (np.asarray(X).shape, np.asarray(y).shape))
-        if dim_ordering == 'default':
-            dim_ordering = K.image_dim_ordering()
-        self.X = np.asarray(X)
-        if self.X.ndim != 3:
-            raise ValueError('Input data in `NumpyArrayIterator` '
-                             'should have rank 3. You passed an array '
-                             'with shape', self.X.shape)
-        self.y = np.asarray(y)
-        self.ecog_data_generator = EcogDataGenerator
-        self.dim_ordering = dim_ordering
-        self.save_to_dir = save_to_dir
-        self.save_prefix = save_prefix
-        self.save_format = save_format
-        super(NumpyArrayIterator, self).__init__(X.shape[0], batch_size, shuffle, seed)
-
-    def next(self):
-        # for python 2.x.
-        # Keeps under lock only the mechanism which advances
-        # the indexing of each batch
-        # see http://anandology.com/blog/using-iterators-and-generators/
-        with self.lock:
-            index_array, current_index, current_batch_size = next(self.index_generator)
-        # The transformation of images is not under thread lock so it can be done in parallel
-        batch_x = np.zeros(tuple([current_batch_size] + self.final_size[1:]))
-        for i, j in enumerate(index_array):
-            x = self.X[j]
-            x = self.ecog_data_generator.random_transform(x.astype('float32'))
-            x = self.ecog_data_generator.standardize(x)
-            if self.fft:
-                x = self.ecog_data_generator.freq_transform(x, self.f_lo, self.f_hi, self.samp_rate)
-            batch_x[i] = x
-        if self.save_to_dir:
-            for i in range(current_batch_size):
-                img = array_to_img(batch_x[i], self.dim_ordering, scale=True)
-                fname = '{prefix}_{index}_{hash}.{format}'.format(prefix=self.save_prefix,
-                                                                  index=current_index + i,
-                                                                  hash=np.random.randint(1e4),
-                                                                  format=self.save_format)
-                img.save(os.path.join(self.save_to_dir, fname))
-        if self.y is None:
-            return batch_x
-        batch_y = self.y[index_array]
-        return batch_x, batch_y
-
 
 class DirectoryIterator(Iterator):
 
     def __init__(self, directory, EcogDataGenerator,
-                 target_size=(1,64, 1000), final_size=(1,64, 1000), color_mode='rgb',
+                 target_size=None, final_size=None, color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
@@ -409,7 +355,8 @@ class DirectoryIterator(Iterator):
             dim_ordering = K.image_dim_ordering()
         self.directory = directory
         self.ecog_data_generator = EcogDataGenerator
-        self.target_size = tuple(target_size)
+        if self.target_size:
+            self.target_size = tuple(target_size)
         self.final_size = tuple(final_size)
         #if color_mode not in {'grayscale'}:
         #    raise ValueError('Invalid color mode:', color_mode,
@@ -482,14 +429,19 @@ class DirectoryIterator(Iterator):
         with self.lock:
             index_array, current_index, current_batch_size = next(self.index_generator)
         # The transformation of images is not under thread lock so it can be done in parallel
-        batch_x = np.zeros((current_batch_size,) + self.image_shape)
+        if self.ecog_data_generator.seq_num:
+            batch_x = np.zeros(shape=((current_batch_size,self.ecog_data_generator.seq_num) + self.image_shape))
+        else:
+            batch_x = np.zeros((current_batch_size,) + self.image_shape)
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
+
             x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels)
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
+
             if self.ecog_data_generator.fft:
                 x = self.ecog_data_generator.freq_transform(x, self.ecog_data_generator.f_lo, self.ecog_data_generator.f_hi, self.ecog_data_generator.samp_rate)
             batch_x[i] = x

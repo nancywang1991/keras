@@ -832,20 +832,27 @@ class DirectoryIterator(Iterator):
             else:
                 imgs = load_img(os.path.join(self.directory, fname),
                            resize_size=self.resize_size, num_frames=self.num_frames)
-            use_frames = len(imgs)
             for j, img in enumerate(imgs):
                 imgs[j] = img_to_array(img, dim_ordering=K.image_dim_ordering())
                 imgs[j] = self.image_data_generator.random_transform(imgs[j])
                 imgs[j] = self.image_data_generator.standardize(imgs[j])
             if i == 0:
                 batch_x = []
-                for f in xrange(len(imgs)):
+                if self.img_mode=="seq":
+                    for f in xrange(len(imgs)):
+                        batch_x.append(np.zeros(imgs.shape))
+                else:
+                    for f in xrange(len(imgs)):
                         batch_x.append(np.zeros(shape=((len(index_array),) + imgs[0].shape)))
 
             #import pdb
             #pdb.set_trace()
-            for f in xrange(len(imgs)):
-                batch_x[f][i] = imgs[f]
+            if self.img_mode == "seq":
+                for f in xrange(len(imgs)):
+                    batch_x[i][f] = imgs[f]
+            else:
+                for f in xrange(len(imgs)):
+                    batch_x[f][i] = imgs[f]
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
