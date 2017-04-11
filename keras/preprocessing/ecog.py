@@ -355,7 +355,7 @@ class DirectoryIterator(Iterator):
             dim_ordering = K.image_dim_ordering()
         self.directory = directory
         self.ecog_data_generator = EcogDataGenerator
-        if self.target_size:
+        if target_size:
             self.target_size = tuple(target_size)
         self.final_size = tuple(final_size)
         #if color_mode not in {'grayscale'}:
