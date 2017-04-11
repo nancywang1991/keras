@@ -357,6 +357,8 @@ class DirectoryIterator(Iterator):
         self.ecog_data_generator = EcogDataGenerator
         if target_size:
             self.target_size = tuple(target_size)
+        else:
+            self.target_size = None
         self.final_size = tuple(final_size)
         #if color_mode not in {'grayscale'}:
         #    raise ValueError('Invalid color mode:', color_mode,
