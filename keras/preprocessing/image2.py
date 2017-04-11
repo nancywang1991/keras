@@ -400,7 +400,7 @@ class ImageDataGenerator(object):
                              'Received arg: ', zoom_range)
 
     def flow_from_directory(self, directory,
-                            color_mode=None, target_size=None, num_frames=1,
+                            color_mode="rgb", target_size=None, num_frames=1,
                             image_reader='pil',
                             read_formats={'png','jpg','jpeg','bmp'},
                             classes=None, class_mode='categorical',
