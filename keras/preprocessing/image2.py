@@ -261,7 +261,7 @@ def load_img(path, target_mode=None, resize_size=None, num_frames=1):
     img_orig = Image.open(path)
     imgs = []
     width, height = img_orig.size
-    for i in range(num_frames-2, num_frames):
+    for i in range(num_frames-4, num_frames-2):
         imgs.append(img_orig.crop((i*width/num_frames,0,(i+1)*width/num_frames, height)))
     for i,img in enumerate(imgs):
         if target_mode:
