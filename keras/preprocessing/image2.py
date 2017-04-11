@@ -284,9 +284,8 @@ def load_img_seq(path, target_mode=None, resize_size=None, num_frames=1, keep_fr
             imgs[f] = imgs[f].convert(target_mode)
         if resize_size:
             imgs[f] = imgs[f].resize((resize_size[1], resize_size[0]))
-    import pdb
-    pdb.set_trace()
-    return imgs[tuple(keep_frames)]
+
+    return [imgs[f] for f in keep_frames]
 
 
 def list_pictures(directory, ext='jpg|jpeg|bmp|png'):
