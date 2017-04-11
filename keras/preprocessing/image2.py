@@ -255,7 +255,7 @@ def img_to_array(img, dim_ordering=K.image_dim_ordering()):
         raise Exception('Unsupported image shape: ', x.shape)
     return x
 
-def load_img(path, target_mode=None, target_size=None, num_frames=1):
+def load_img(path, target_mode=None, resize_size=None, num_frames=1):
     from PIL import Image, ImageChops
     #print(path)
     img_orig = Image.open(path)
@@ -266,12 +266,12 @@ def load_img(path, target_mode=None, target_size=None, num_frames=1):
     for i,img in enumerate(imgs):
         if target_mode:
             imgs[i] = img.convert(target_mode)
-        if target_size:
-            imgs[i] = img.resize((target_size[1], target_size[0]))
+        if resize_size:
+            imgs[i] = img.resize((resize_size[1], resize_size[0]))
     imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
     return [imgs[0], imgs[-1]]
 
-def load_img_seq(path, target_mode=None, target_size=None, num_frames=1, keep_frames=None):
+def load_img_seq(path, target_mode=None, resize_size=None, num_frames=1, keep_frames=None):
     from PIL import Image, ImageChops
     #print(path)
     img_orig = Image.open(path)
@@ -282,8 +282,8 @@ def load_img_seq(path, target_mode=None, target_size=None, num_frames=1, keep_fr
     for f in keep_frames:
         if target_mode:
             imgs[f] = imgs[f].convert(target_mode)
-        if target_size:
-            imgs[f] = imgs[f].resize((target_size[1], target_size[0]))
+        if resize_size:
+            imgs[f] = imgs[f].resize((resize_size[1], resize_size[0]))
     return imgs[keep_frames]
 
 
@@ -400,7 +400,7 @@ class ImageDataGenerator(object):
                              'Received arg: ', zoom_range)
 
     def flow_from_directory(self, directory,
-                            color_mode="rgb", target_size=None, num_frames=1,
+                            color_mode="rgb", target_size=None, resize_size=None, num_frames=1,
                             image_reader='pil',
                             read_formats={'png','jpg','jpeg','bmp'},
                             classes=None, class_mode='categorical',
@@ -412,6 +412,7 @@ class ImageDataGenerator(object):
         return DirectoryIterator(
             directory, self,
             color_mode=color_mode, target_size=target_size,
+            resize_size=resize_size,
             num_frames=num_frames,
             classes=classes,
             class_mode=class_mode,
@@ -724,7 +725,7 @@ class DirectoryIterator(Iterator):
     """
 
     def __init__(self, directory, image_data_generator,
-                 target_size=(256, 256), color_mode='rgb',
+                 target_size=(256, 256), resize_size = (256,256), color_mode='rgb',
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  dim_ordering=None,
@@ -734,6 +735,7 @@ class DirectoryIterator(Iterator):
         self.num_frames=num_frames
         self.image_data_generator = image_data_generator
         self.target_size = tuple(target_size)
+        self.resize_size = tuple(resize_size)
         if color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', color_mode,
                              '; expected "rgb" or "grayscale".')
@@ -827,10 +829,10 @@ class DirectoryIterator(Iterator):
             fname = self.filenames[j]
             if self.img_mode=="seq":
                 imgs = load_img_seq(os.path.join(self.directory, fname),
-                           target_size=self.target_size, num_frames=self.num_frames)
+                           resize_size=self.resize_size, num_frames=self.num_frames)
             else:
                 imgs = load_img(os.path.join(self.directory, fname),
-                           target_size=self.target_size, num_frames=self.num_frames)
+                           resize_size=self.resize_size, num_frames=self.num_frames)
             for i, img in enumerate(imgs):
                 imgs[i] = img_to_array(img, dim_ordering=K.image_dim_ordering())
             x = img_to_array(img)
