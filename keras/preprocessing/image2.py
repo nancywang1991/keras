@@ -842,7 +842,7 @@ class DirectoryIterator(Iterator):
                 batch_x = []
                 for f in xrange(len(index_array)):
                         batch_x.append((len(imgs),) + imgs[0].shape)
-            batch_x[i] = imgs
+            batch_x[i] = np.array(imgs)
         # optionally save augmented images to disk for debugging purposes
         if self.save_to_dir:
             for i in range(current_batch_size):
