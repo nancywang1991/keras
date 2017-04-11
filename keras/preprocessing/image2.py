@@ -766,7 +766,7 @@ class DirectoryIterator(Iterator):
         white_list_formats = {'png', 'jpg', 'jpeg', 'bmp'}
 
         # first, count the number of samples and classes
-        self.samples = 0
+        self.nb_sample = 0
 
         if not classes:
             classes = []
@@ -808,7 +808,7 @@ class DirectoryIterator(Iterator):
                     self.filenames.append(os.path.join(subdir, fname))
                     i += 1
 
-        super(DirectoryIterator, self).__init__(self.samples, batch_size, shuffle, seed, pre_shuffle_ind=pre_shuffle_ind)
+        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind=pre_shuffle_ind)
 
     def next(self):
         """For python 2.x.
