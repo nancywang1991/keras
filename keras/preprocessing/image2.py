@@ -220,51 +220,23 @@ def flip_axis(x, axis):
     return x
 
 
-def array_to_img(x, data_format=None, scale=True):
-    """Converts a 3D Numpy array to a PIL Image instance.
-    # Arguments
-        x: Input Numpy array.
-        data_format: Image data format.
-        scale: Whether to rescale image values
-            to be within [0, 255].
-    # Returns
-        A PIL Image instance.
-    # Raises
-        ImportError: if PIL is not available.
-        ValueError: if invalid `x` or `data_format` is passed.
-    """
-    if pil_image is None:
-        raise ImportError('Could not import PIL.Image. '
-                          'The use of `array_to_img` requires PIL.')
-    x = np.asarray(x, dtype=K.floatx())
-    if x.ndim != 3:
-        raise ValueError('Expected image array to have rank 3 (single image). '
-                         'Got array with shape:', x.shape)
-
-    if data_format is None:
-        data_format = K.image_data_format()
-    if data_format not in {'channels_first', 'channels_last'}:
-        raise ValueError('Invalid data_format:', data_format)
-
-    # Original Numpy array x has format (height, width, channel)
-    # or (channel, height, width)
-    # but target PIL image has format (width, height, channel)
-    if data_format == 'channels_first':
+def array_to_img(x, dim_ordering=K.image_dim_ordering(), mode=None, scale=True):
+    from PIL import Image
+    x = x.copy()
+    if dim_ordering == 'th':
         x = x.transpose(1, 2, 0)
     if scale:
-        x = x + max(-np.min(x), 0)
-        x_max = np.max(x)
-        if x_max != 0:
-            x /= x_max
+        x += max(-np.min(x), 0)
+        x /= np.max(x)
         x *= 255
-    if x.shape[2] == 3:
-        # RGB
-        return pil_image.fromarray(x.astype('uint8'), 'RGB')
-    elif x.shape[2] == 1:
-        # grayscale
-        return pil_image.fromarray(x[:, :, 0].astype('uint8'), 'L')
+    if x.shape[2] == 3 and mode == 'RGB':
+        return Image.fromarray(x.astype('uint8'), mode)
+    elif x.shape[2] == 1 and mode == 'L':
+        return Image.fromarray(x[:, :, 0].astype('uint8'), mode)
+    elif mode:
+        return Image.fromarray(x, mode)
     else:
-        raise ValueError('Unsupported channel number: ', x.shape[2])
+        raise Exception('Unsupported array shape: ', x.shape)
 
 
 def img_to_array(img, data_format=None):
