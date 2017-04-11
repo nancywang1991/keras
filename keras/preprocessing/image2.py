@@ -841,7 +841,7 @@ class DirectoryIterator(Iterator):
                 batch_x = []
                 if self.img_mode=="seq":
                     for f in xrange(len(imgs)):
-                        batch_x.append(np.zeros(imgs.shape))
+                        batch_x.append(np.zeros(shape=((len(imgs),) + imgs[0].shape)))
                 else:
                     for f in xrange(len(imgs)):
                         batch_x.append(np.zeros(shape=((len(index_array),) + imgs[0].shape)))
