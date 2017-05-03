@@ -220,7 +220,7 @@ class EcogDataGenerator(object):
             if np.random.randint(100) < 25:
                 noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
                 x = x + noise
-        if self.time_shift_range:
+        if self.time_shift_range and not self.center:
             if target_size[-1]+self.time_shift_range > x.shape[-1]:
                 print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
