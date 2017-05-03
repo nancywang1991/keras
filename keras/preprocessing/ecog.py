@@ -234,9 +234,10 @@ class EcogDataGenerator(object):
     def freq_transform(self, x, f_lo,f_hi, samp_rate):
         f_hi = int(f_hi*(x.shape[-1]/float(samp_rate)))
         f_lo = int(f_lo * (x.shape[-1] / float(samp_rate)))
-        freq = np.zeros(shape=(x.shape[0], x.shape[1], f_hi-f_lo))
-        for c in xrange(x.shape[1]):
-            freq[0,c,:] = (np.abs((np.fft.fft(x[0,c])) ** 2))[f_lo:f_hi]
+        freq = np.zeros(shape=(x.shape[0], x.shape[1], 2))
+        for c in xrange(freq.shape[1]):
+        	freq[0,c,0] = np.mean((np.abs((np.fft.fft(x[0,c])) ** 2))[10:30])
+		freq[0,c,1] = np.mean((np.abs((np.fft.fft(x[0,c])) ** 2))[70:100])
         return freq
 
     def fit(self, X,
@@ -439,11 +440,9 @@ class DirectoryIterator(Iterator):
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-
             x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels)
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
-
             if self.ecog_data_generator.fft:
                 x = self.ecog_data_generator.freq_transform(x, self.ecog_data_generator.f_lo, self.ecog_data_generator.f_hi, self.ecog_data_generator.samp_rate)
             batch_x[i] = x
@@ -462,7 +461,7 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype('float32')
         elif self.class_mode == 'categorical':
-            batch_y = np.zeros((len(batch_x), self.nb_class), dtype='float32')
+            batch_y = np.zeros(shape=((len(batch_x), self.nb_class)), dtype='float32')
             for i, label in enumerate(self.classes[index_array]):
                 batch_y[i, label] = 1.
         else:

@@ -125,6 +125,9 @@ class TimeDistributed(Wrapper):
             input_length = input_shape[1]
             if not input_length:
                 input_length = K.shape(X)[1]
+            #import pdb
+            #print X
+	    #pdb.set_trace()
             X = K.reshape(X, (-1, ) + input_shape[2:])  # (nb_samples * timesteps, ...)
             y = self.layer.call(X)  # (nb_samples * timesteps, ...)
             # (nb_samples, timesteps, ...)

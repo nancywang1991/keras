@@ -5,6 +5,7 @@ new preprocessing methods, etc...
 from __future__ import absolute_import
 from __future__ import print_function
 
+import pdb
 import numpy as np
 import re
 from scipy import linalg
@@ -268,7 +269,7 @@ def load_img(path, target_mode=None, resize_size=None, num_frames=1):
             imgs[i] = img.convert(target_mode)
         if resize_size:
             imgs[i] = img.resize((resize_size[1], resize_size[0]))
-    imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
+    #imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
     return [imgs[0], imgs[-1]]
 
 def load_img_seq(path, target_mode=None, resize_size=None, num_frames=1, keep_frames=None):
@@ -343,6 +344,7 @@ class ImageDataGenerator(object):
                  height_shift_range=0.,
                  shear_range=0.,
                  zoom_range=0.,
+                 random_black=False,
                  channel_shift_range=0.,
                  fill_mode='nearest',
                  cval=0.,
@@ -369,6 +371,7 @@ class ImageDataGenerator(object):
         self.channel_shift_range = channel_shift_range
         self.fill_mode = fill_mode
         self.cval = cval
+        self.random_black=random_black,
         self.horizontal_flip = horizontal_flip
         self.vertical_flip = vertical_flip
         self.rescale = rescale
@@ -451,7 +454,9 @@ class ImageDataGenerator(object):
 
         if self.random_crop:
             x = random_crop(x, self.random_crop)
-        
+        if self.random_black:
+            if np.random.randint(100)>80:
+		x *= 0
         if self.featurewise_center:
             if self.mean is not None:
                 x -= self.mean
@@ -738,7 +743,10 @@ class DirectoryIterator(Iterator):
         self.num_frames=num_frames
         self.image_data_generator = image_data_generator
         self.target_size = tuple(target_size)
-        self.resize_size = tuple(resize_size)
+        if resize_size:
+            self.resize_size = tuple(resize_size)
+        else:
+            self.resize_size = None
         if color_mode not in {'rgb', 'grayscale'}:
             raise ValueError('Invalid color mode:', color_mode,
                              '; expected "rgb" or "grayscale".')
@@ -868,7 +876,7 @@ class DirectoryIterator(Iterator):
         elif self.class_mode == 'binary':
             batch_y = self.classes[index_array].astype(K.floatx())
         elif self.class_mode == 'categorical':
-            batch_y = np.zeros((len(batch_x), self.num_class), dtype=K.floatx())
+            batch_y = np.zeros(shape=((len(batch_x), self.nb_class)), dtype=K.floatx())
             for i, label in enumerate(self.classes[index_array]):
                 batch_y[i, label] = 1.
         else:
