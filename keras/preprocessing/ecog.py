@@ -78,7 +78,7 @@ def load_edf(path, start_time, channels=None):
 	except:
 	    print(path)
 	    pass
-    return signal[start_time-100:start_time+100,channels]
+    return signal[:,channels, start_time-100:]
 
 
 def list_edfs(directory, ext='npy'):
@@ -171,8 +171,8 @@ class EcogDataGenerator(object):
 
     def standardize(self, x, target_size):
         if self.center:
-            cutoff = (x.shape[-1]- target_size[-1])/2
-            x = x[:,:,cutoff:-cutoff]
+            shift = self.time_shift_range/2
+            x = x[:,:,shift:shift+target_size]
 
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
@@ -227,7 +227,7 @@ class EcogDataGenerator(object):
             if np.random.randint(100) < 10:
                 shift = np.random.randint(self.time_shift_range)
             else:
-                shift = (x.shape[-1]- target_size[-1])/2
+                shift = self.time_shift_range/2
             x = x[:,:,shift:(shift+target_size[-1])]
         return x
 
