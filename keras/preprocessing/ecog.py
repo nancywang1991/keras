@@ -172,7 +172,7 @@ class EcogDataGenerator(object):
     def standardize(self, x, target_size):
         if self.center:
             shift = self.time_shift_range/2
-            x = x[:,:,shift:shift+target_size]
+            x = x[:,:,shift:shift+target_size[-1]]
 
         # x is a single image, so it doesn't have image number at index 0
         ecog_channel_index = self.channel_index - 1
