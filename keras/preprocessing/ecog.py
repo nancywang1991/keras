@@ -69,15 +69,16 @@ def load_edf(path, start_time, channels=None):
         path: path to edf file
         channels: channels to keep
     '''
-    signal = np.expand_dims(np.load(path)[:,start_time:],0)
+    signal = np.expand_dims(np.load(path)[:,:],0)
     for c in channels:#xrange(signal.shape[1]):
         try:
             signal[0,c] = butter_bandpass_filter(signal[:,c],10,200, 1000) 
             signal[0,c] = (signal[0,c] - np.mean(signal[:,c]))/np.std(signal[:,c])
+
 	except:
 	    print(path)
 	    pass
-    return signal[:,channels]
+    return signal[start_time-100:start_time+100,channels]
 
 
 def list_edfs(directory, ext='npy'):
@@ -119,7 +120,7 @@ class EcogDataGenerator(object):
                  center=True,
                  dim_ordering='default',
                  start_time = 0,
-                 seq_len=None, seq_start=None, seq_num=None, seq_st=None):
+                 seq_len=None, seq_num=None, seq_st=None):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.__dict__.update(locals())
@@ -134,7 +135,6 @@ class EcogDataGenerator(object):
         self.fft=fft
         self.start_time=start_time
         self.seq_len = seq_len
-        self.seq_start = seq_start
         self.seq_num = seq_num
         self.seq_st = seq_st
 
@@ -211,7 +211,7 @@ class EcogDataGenerator(object):
         if self.seq_len:
             x_temp = np.zeros(shape=(self.seq_num, x.shape[0],x.shape[1], self.seq_len))
             for i in xrange(self.seq_num):
-                x_temp[i] = x[:,:,(self.seq_start+i*self.seq_st):(self.seq_start+i*self.seq_st + self.seq_len)]
+                x_temp[i] = x[:,:,(i*self.seq_st):(i*self.seq_st + self.seq_len)]
             x= x_temp
         return x
 
@@ -224,10 +224,10 @@ class EcogDataGenerator(object):
             if target_size[-1]+self.time_shift_range > x.shape[-1]:
                 print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
-            if np.random.randint(100) < 25:
+            if np.random.randint(100) < 10:
                 shift = np.random.randint(self.time_shift_range)
             else:
-                shift = (x.shape[-1] - target_size[-1]) / 2
+                shift = (x.shape[-1]- target_size[-1])/2
             x = x[:,:,shift:(shift+target_size[-1])]
         return x
 
