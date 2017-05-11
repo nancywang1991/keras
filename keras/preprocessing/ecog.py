@@ -79,7 +79,7 @@ def load_edf(path, start_time, channels=None, ablate=None):
             pass
     if ablate:
         for c in ablate:
-            signal[0, c] *= 0
+            signal[0, c] = np.mean(signal[0,c])
     return signal[:,channels, start_time-100:]
 
 
