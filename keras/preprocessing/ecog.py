@@ -62,7 +62,7 @@ def array_to_img(x, dim_ordering='default', scale=True):
         x *= 255
     return Image.fromarray(x[:, :].astype('uint8'), 'L')
 
-def load_edf(path, start_time, channels=None):
+def load_edf(path, start_time, channels=None, ablate=[]):
     '''Load an edf into numpy format.
 
     # Arguments
@@ -74,10 +74,11 @@ def load_edf(path, start_time, channels=None):
         try:
             signal[0,c] = butter_bandpass_filter(signal[:,c],10,200, 1000) 
             signal[0,c] = (signal[0,c] - np.mean(signal[:,c]))/np.std(signal[:,c])
-
-	except:
-	    print(path)
-	    pass
+        except:
+            print(path)
+            pass
+    for c in ablate:
+        signal[0, c] *= 0
     return signal[:,channels, start_time-100:]
 
 
