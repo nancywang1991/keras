@@ -62,7 +62,7 @@ def array_to_img(x, dim_ordering='default', scale=True):
         x *= 255
     return Image.fromarray(x[:, :].astype('uint8'), 'L')
 
-def load_edf(path, start_time, channels=None, ablate=[]):
+def load_edf(path, start_time, channels=None, ablate=None):
     '''Load an edf into numpy format.
 
     # Arguments
@@ -77,8 +77,9 @@ def load_edf(path, start_time, channels=None, ablate=[]):
         except:
             print(path)
             pass
-    for c in ablate:
-        signal[0, c] *= 0
+    if ablate:
+        for c in ablate:
+            signal[0, c] *= 0
     return signal[:,channels, start_time-100:]
 
 
