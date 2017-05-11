@@ -147,20 +147,13 @@ class EcogDataGenerator(object):
             self.channel_index = 1
             self.row_index = 2
 
-    def flow(self, X, y=None, batch_size=32, shuffle=True, seed=None,
-             save_to_dir=None, save_prefix='', save_format='jpeg'):
-        return NumpyArrayIterator(
-            X, y, self,
-            batch_size=batch_size, shuffle=shuffle, seed=seed,
-            dim_ordering=self.dim_ordering,
-            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format)
 
     def flow_from_directory(self, directory,
                             target_size=None, final_size=None,
                             classes=None, class_mode='categorical',
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
-                            follow_links=False, pre_shuffle_ind = None, channels=None):
+                            follow_links=False, pre_shuffle_ind = None, channels=None, ablate=None):
         return DirectoryIterator(
             directory, self,
             target_size=target_size, final_size=final_size, color_mode=color_mode,
@@ -168,7 +161,7 @@ class EcogDataGenerator(object):
             dim_ordering=self.dim_ordering,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
             save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
-            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind, channels=channels)
+            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind, channels=channels, ablate=ablate)
 
     def standardize(self, x, target_size):
         if self.center:
@@ -352,7 +345,7 @@ class DirectoryIterator(Iterator):
                  classes=None, class_mode='categorical',
                  batch_size=32, shuffle=True, seed=None,
                  save_to_dir=None, save_prefix='', save_format='jpeg',
-                 follow_links=False, pre_shuffle_ind=None, start_time=0, channels=None):
+                 follow_links=False, pre_shuffle_ind=None, start_time=0, channels=None, ablate= None):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
         self.directory = directory
@@ -378,6 +371,7 @@ class DirectoryIterator(Iterator):
         self.save_to_dir = save_to_dir
         self.save_prefix = save_prefix
         self.save_format = save_format
+        self.ablate = ablate
 
         white_list_formats = {'npy'}
 
@@ -441,7 +435,7 @@ class DirectoryIterator(Iterator):
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels)
+            x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels, self.ablate)
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
             if self.ecog_data_generator.fft:
