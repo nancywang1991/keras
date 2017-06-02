@@ -339,6 +339,13 @@ class Iterator(object):
         return self.next(*args, **kwargs)
 
 
+def extract_batch_y(self, index_array, start_time):
+    end = int((start_time + 999) * (30 / 1000.0))
+    batch_y = np.zeros(len(index_array))
+    root = "/".join(self.filenames[0].split("/")[:-2]) + "/Y/"
+    for f, file in enumerate(self.filenames[index_array]):
+        batch_y[f] = np.max(np.load(root + file.split("/")[-1])[end - 10:end])
+    return batch_y
 
 class DirectoryIterator(Iterator):
 
@@ -405,14 +412,6 @@ class DirectoryIterator(Iterator):
                     absolute_path = os.path.join(root, fname)
                     self.filenames.append(os.path.relpath(absolute_path, directory))
         super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
-
-    def extract_batch_y(self, index_array, start_time):
-        end = int((start_time+999)*(30/1000.0))
-        batch_y = np.zeros(len(index_array))
-        root = "/".join(self.filenames[0].split("/")[:-2]) + "/Y/"
-        for f, file in enumerate(self.filenames[index_array]):
-            batch_y[f] = np.max(np.load(root + file.split("/")[-1])[end-10:end])
-        return batch_y
 
     def next(self):
         with self.lock:
