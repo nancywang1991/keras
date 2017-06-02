@@ -343,8 +343,8 @@ def extract_batch_y(self, index_array, start_time):
     end = int((start_time + 999) * (30 / 1000.0))
     batch_y = np.zeros(len(index_array))
     root = "/".join(self.filenames[0].split("/")[:-2]) + "/Y/"
-    for f, file in enumerate(self.filenames[index_array]):
-        batch_y[f] = np.max(np.load(root + file.split("/")[-1])[end - 10:end])
+    for f, file_ind in enumerate(index_array):
+        batch_y[f] = np.max(np.load(root + self.filenames[file_ind].split("/")[-1])[end - 10:end])
     return batch_y
 
 class DirectoryIterator(Iterator):
