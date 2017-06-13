@@ -83,7 +83,7 @@ def load_edf(path, start_time, channels=None, ablate=None):
     if ablate:
         for c in ablate:
             signal[0, c] = np.mean(signal[0,c])
-    return signal[:,channels, start_time-100:], start_time
+    return signal[:,channels, start_time-100:start_time+1100], start_time
 
 
 def list_edfs(directory, ext='npy'):
@@ -340,11 +340,17 @@ class Iterator(object):
 
 
 def extract_batch_y(self, index_array, start_time):
-    end = int((start_time + 999) * (30 / 1000.0))
     batch_y = np.zeros(len(index_array))
     root =  self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
-        batch_y[f] = np.max(np.load(root + self.filenames[file_ind].split("/")[-1])[end - 10:end])
+	end = int((start_time[f] + 999) * (30 / 1000.0))
+	try:
+		#print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
+		ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
+		ydata = [0 if y < 0 else y/5.0 for y in ydata]
+        	batch_y[f] = np.max(ydata) > 0.3 
+	except:
+		pdb.set_trace()
     return batch_y
 
 class DirectoryIterator(Iterator):
@@ -423,9 +429,10 @@ class DirectoryIterator(Iterator):
             batch_x = np.zeros((current_batch_size,) + self.image_shape)
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
+	start_time_batch = np.zeros(len(index_array))
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            x, start_time = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels, self.ablate)
+            x, start_time_batch[i] = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels, self.ablate)
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
             if self.ecog_data_generator.fft:
@@ -441,6 +448,6 @@ class DirectoryIterator(Iterator):
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         # build batch of labels
-        batch_y = extract_batch_y(self, index_array, start_time)
+        batch_y = extract_batch_y(self, index_array, start_time_batch)
 
         return batch_x, batch_y
