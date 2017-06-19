@@ -347,14 +347,14 @@ def extract_batch_y(self, index_array, start_time):
     try:
         #print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
         ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
-        ydata_start = ydata[0,0]
-        ydata_end = ydata[-1, 0]
+        ydata_start = ydata[0]
+        ydata_end = ydata[-1]
         t= 0
-        while ydata_start < 0:
+        while ydata_start[0] < 0:
             t+=1
             ydata_start = ydata[t]
         t=-1
-        while ydata_end < 0:
+        while ydata_end[0] < 0:
             t-=1
             ydata_end = ydata[t]
         mvmt = np.random.normal((ydata_end - ydata_start)/2.0 + 7.5, scale=1.0, size=(15,15))
