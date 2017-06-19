@@ -376,7 +376,6 @@ def extract_batch_y(self, index_array, start_time):
             t-=1
             ydata_end = ydata[t]
         mvmt = makeGaussian(30, center=(ydata_end - ydata_start)/2.0 + 7.5)
-        pdb.set_trace()
         batch_y[f] = np.ndarray.flatten(mvmt)
     except:
         pdb.set_trace()
