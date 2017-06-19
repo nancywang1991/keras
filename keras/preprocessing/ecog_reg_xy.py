@@ -338,6 +338,24 @@ class Iterator(object):
     def __next__(self, *args, **kwargs):
         return self.next(*args, **kwargs)
 
+def makeGaussian(size, fwhm = 3, center=None):
+    """ Make a square gaussian kernel.
+
+    size is the length of a side of the square
+    fwhm is full-width-half-maximum, which
+    can be thought of as an effective radius.
+    """
+
+    x = np.arange(0, size, 1, float)
+    y = x[:,np.newaxis]
+
+    if center is None:
+        x0 = y0 = size // 2
+    else:
+        x0 = center[0]
+        y0 = center[1]
+
+    return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
 def extract_batch_y(self, index_array, start_time):
     batch_y = np.zeros(shape=(len(index_array),225))
@@ -357,7 +375,8 @@ def extract_batch_y(self, index_array, start_time):
         while ydata_end[0] < 0:
             t-=1
             ydata_end = ydata[t]
-        mvmt = np.random.normal((ydata_end - ydata_start)/2.0 + 7.5, scale=1.0, size=(15,15))
+        mvmt = makeGaussian(15, center=(ydata_end - ydata_start)/2.0 + 7.5)
+        pdb.set_trace()
         batch_y[f] = np.ndarray.flatten(mvmt)
     except:
         pdb.set_trace()
