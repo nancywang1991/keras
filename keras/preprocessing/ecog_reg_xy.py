@@ -340,7 +340,7 @@ class Iterator(object):
 
 
 def extract_batch_y(self, index_array, start_time):
-    batch_y = np.zeros(len(index_array))
+    batch_y = np.zeros(shape=(len(index_array),225))
     root =  self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
         end = int((start_time[f] + 999) * (30 / 1000.0))
@@ -352,12 +352,13 @@ def extract_batch_y(self, index_array, start_time):
         t= 0
         while ydata_start < 0:
             t+=1
-            ydata_start = ydata[t,0]
+            ydata_start = ydata[t]
         t=-1
         while ydata_end < 0:
             t-=1
-            ydata_end = ydata[t,0]
-        batch_y[f] = ydata_end > ydata_start
+            ydata_end = ydata[t]
+        mvmt = np.random.normal((ydata_end - ydata_start)/2.0 + 7.5, scale=1.0, size=(15,15))
+        batch_y[f] = np.ndarray.flatten(mvmt)
     except:
         pdb.set_trace()
     return batch_y
