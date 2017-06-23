@@ -739,6 +739,8 @@ def extract_batch_y(self, index_array, start_time):
             while ydata_end[0] < 0:
                 t-=1
                 ydata_end = ydata[t]
+            ydata_end[0] = ydata_end[0]*(256/640.0)-16
+            ydata_end[1] = ydata_end[1] * (256 / 480.0) - 16
             mvmt = makeGaussian(56, center=(ydata_end)/4.0)
             batch_y[f,0] = mvmt
         except:
@@ -881,16 +883,16 @@ class DirectoryIterator(Iterator):
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         start_time_batch = np.zeros(len(index_array))
-	batch_x = []
+        batch_x = []
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-	    img, start_time_batch[i] = load_img(os.path.join(self.directory, fname), self.image_data_generator.start_time, resize_size=self.resize_size, num_frames=self.num_frames)
-	    img = img_to_array(img, dim_ordering=K.image_dim_ordering())
+            img, start_time_batch[i] = load_img(os.path.join(self.directory, fname), self.image_data_generator.start_time, resize_size=self.resize_size, num_frames=self.num_frames)
+            img = img_to_array(img, dim_ordering=K.image_dim_ordering())
             img = self.image_data_generator.random_transform(img)
             img = self.image_data_generator.standardize(img)
             batch_x.append(img)
         # optionally save augmented images to disk for debugging purposes
-	batch_x = np.array(batch_x)
+        batch_x = np.array(batch_x)
         if self.save_to_dir:
             for i in range(current_batch_size):
                 img = array_to_img(batch_x[i], scale=True)
