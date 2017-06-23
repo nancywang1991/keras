@@ -265,7 +265,7 @@ def load_img(path, start_time, target_mode=None, resize_size=None, num_frames=1)
     img_orig = Image.open(path)
     imgs = []
     width, height = img_orig.size
-    for i in range(num_frames-4, num_frames-2):
+    for i in range(0, num_frames):
         imgs.append(img_orig.crop((i*width/num_frames,0,(i+1)*width/num_frames, height)))
     for i,img in enumerate(imgs):
         if target_mode:
@@ -273,7 +273,7 @@ def load_img(path, start_time, target_mode=None, resize_size=None, num_frames=1)
         if resize_size:
             imgs[i] = img.resize((resize_size[1], resize_size[0]))
     #imgs[0] = ImageChops.subtract(imgs[-1],imgs[0])
-    return imgs[start_time/416]
+    return imgs[start_time/416], start_time
 
 def load_img_seq(path, target_mode=None, resize_size=None, num_frames=1, keep_frames=None):
     from PIL import Image, ImageChops
@@ -726,23 +726,23 @@ def extract_batch_y(self, index_array, start_time):
     root =  self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
         end = int((start_time[f] + 999) * (30 / 1000.0))
-    try:
-        #print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
-        ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
-        ydata_start = ydata[0]
-        ydata_end = ydata[-1]
-        t= 0
-        while ydata_start[0] < 0:
-            t+=1
-            ydata_start = ydata[t]
-        t=-1
-        while ydata_end[0] < 0:
-            t-=1
-            ydata_end = ydata[t]
-        mvmt = makeGaussian(56, center=(ydata_end)/4.0)
-        batch_y[f,0] = mvmt
-    except:
-        pdb.set_trace()
+        try:
+            #print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
+            ydata = np.load(root + self.filenames[file_ind].split("/")[-1].split(".")[0]+".npy")[(end - 15):end]
+            ydata_start = ydata[0]
+            ydata_end = ydata[-1]
+            t= 0
+            while ydata_start[0] < 0:
+                t+=1
+                ydata_start = ydata[t]
+            t=-1
+            while ydata_end[0] < 0:
+                t-=1
+                ydata_end = ydata[t]
+            mvmt = makeGaussian(56, center=(ydata_end)/4.0)
+            batch_y[f,0] = mvmt
+        except:
+            pdb.set_trace()
     return batch_y
 
 class DirectoryIterator(Iterator):
@@ -881,35 +881,16 @@ class DirectoryIterator(Iterator):
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
         start_time_batch = np.zeros(len(index_array))
+	batch_x = []
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            if self.img_mode=="seq":
-                imgs = load_img_seq(os.path.join(self.directory, fname),
-                           resize_size=self.resize_size, num_frames=self.num_frames, keep_frames=self.image_data_generator.keep_frames)
-            else:
-                imgs, start_time_batch[i] = load_img(os.path.join(self.directory, fname),
-                           resize_size=self.resize_size, num_frames=self.num_frames)
-            for j, img in enumerate(imgs):
-                imgs[j] = img_to_array(img, dim_ordering=K.image_dim_ordering())
-                imgs[j] = self.image_data_generator.random_transform(imgs[j])
-                imgs[j] = self.image_data_generator.standardize(imgs[j])
-            if i == 0:
-                batch_x = []
-                if self.img_mode=="seq":
-                    batch_x=np.zeros(shape=((len(index_array),len(imgs),) + imgs[0].shape))
-                else:
-                    for f in xrange(len(imgs)):
-                        batch_x.append(np.zeros(shape=((len(index_array),) + imgs[0].shape)))
-
-            #import pdb
-            #pdb.set_trace()
-            if self.img_mode == "seq":
-                for f in xrange(len(imgs)):
-                    batch_x[i][f] = imgs[f]
-            else:
-                for f in xrange(len(imgs)):
-                    batch_x[f][i] = imgs[f]
+	    img, start_time_batch[i] = load_img(os.path.join(self.directory, fname), self.image_data_generator.start_time, resize_size=self.resize_size, num_frames=self.num_frames)
+	    img = img_to_array(img, dim_ordering=K.image_dim_ordering())
+            img = self.image_data_generator.random_transform(img)
+            img = self.image_data_generator.standardize(img)
+            batch_x.append(img)
         # optionally save augmented images to disk for debugging purposes
+	batch_x = np.array(batch_x)
         if self.save_to_dir:
             for i in range(current_batch_size):
                 img = array_to_img(batch_x[i], scale=True)
@@ -919,5 +900,5 @@ class DirectoryIterator(Iterator):
                                                                   format=self.save_format)
                 img.save(os.path.join(self.save_to_dir, fname))
         # build batch of labels
-        batch_y = extract_batch_y(self, index_array)
+        batch_y = extract_batch_y(self, index_array, start_time_batch)
         return batch_x, batch_y
