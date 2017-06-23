@@ -429,7 +429,7 @@ class DirectoryIterator(Iterator):
             batch_x = np.zeros((current_batch_size,) + self.image_shape)
         grayscale = self.color_mode == 'grayscale'
         # build batch of image data
-	start_time_batch = np.zeros(len(index_array))
+        start_time_batch = np.zeros(len(index_array))
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
             x, start_time_batch[i] = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels, self.ablate)
