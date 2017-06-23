@@ -358,9 +358,11 @@ class ImageDataGenerator(object):
                  dim_ordering=None,
                  center_crop=None,
                  random_crop=None,
+                 start_time=0,
                  keep_frames=None):
         if dim_ordering is None:
             dim_ordering = K.image_dim_ordering()
+        self.start_time = start_time
         self.featurewise_center = featurewise_center
         self.samplewise_center = samplewise_center
         self.featurewise_std_normalization = featurewise_std_normalization
