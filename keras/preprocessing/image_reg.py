@@ -376,7 +376,7 @@ class ImageDataGenerator(object):
         self.channel_shift_range = channel_shift_range
         self.fill_mode = fill_mode
         self.cval = cval
-        self.random_black=random_black,
+        self.random_black=random_black
         self.horizontal_flip = horizontal_flip
         self.vertical_flip = vertical_flip
         self.rescale = rescale
