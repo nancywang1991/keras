@@ -362,27 +362,27 @@ def extract_batch_y(self, index_array, start_time):
     root =  self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
         end = int((start_time[f] + 999) * (30 / 1000.0))
-    	try:
-        	#print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
-        	ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
-        	ydata_start = ydata[0]
-        	ydata_end = ydata[-1]
-        	t= 0
-        	while ydata_start[0] < 0:
-            		t+=1
-            		ydata_start = ydata[t]
-        	t=-1
-        	while ydata_end[0] < 0:
-            		t-=1
-            		ydata_end = ydata[t]
-        	mvmt = makeGaussian(30, center=(ydata_end - ydata_start)/2.0 + 15)
-		#if ydata_start[0]>ydata_end[0]:
-        	#	mvmt = makeGaussian(30, center=(0,0))
-		#else:
-		#	mvmt = makeGaussian(30, center=(30,0))
-		batch_y[f] = np.ndarray.flatten(mvmt)
-    	except:
-        	pdb.set_trace()
+        try:
+            #print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
+            ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
+            ydata_start = ydata[0]
+            ydata_end = ydata[-1]
+            t= 0
+            while ydata_start[0] < 0:
+                t+=1
+                ydata_start = ydata[t]
+            t=-1
+            while ydata_end[0] < 0:
+                t-=1
+                ydata_end = ydata[t]
+            mvmt = makeGaussian(30, center=(ydata_end - ydata_start)/2.0 + 15)
+            #if ydata_start[0]>ydata_end[0]:
+            #	mvmt = makeGaussian(30, center=(0,0))
+            #else:
+            #	mvmt = makeGaussian(30, center=(30,0))
+            batch_y[f] = np.ndarray.flatten(mvmt)
+        except:
+            pdb.set_trace()
     return batch_y
 
 class DirectoryIterator(Iterator):
