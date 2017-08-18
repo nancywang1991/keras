@@ -71,7 +71,7 @@ def load_edf(path, start_time, channels=None):
         path: path to edf file
         channels: channels to keep
     '''
-    signal = np.load(path)
+    signal = np.load(path)[:64]
     for c in xrange(64):
         try:
             signal[c] = butter_bandpass_filter(signal[c],10,200, 1000)
