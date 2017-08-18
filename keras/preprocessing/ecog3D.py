@@ -314,9 +314,9 @@ class Iterator(object):
             if seed is not None:
                 np.random.seed(seed + self.total_batches_seen)
             if self.batch_index == 0:
-                index_array = np.arange(N)
+                self.index_array = np.arange(N)
                 if shuffle:
-                    index_array = np.random.permutation(N)
+                    self.index_array = np.random.permutation(N)
                 if pre_shuffle_ind is not None:
                     np.random.seed(self.total_batches_seen)
                     self.index_array = np.random.permutation(N)
