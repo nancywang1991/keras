@@ -723,6 +723,7 @@ def makeGaussian(size, fwhm = 3, center=None):
 
 def extract_batch_y(self, index_array, start_time):
     batch_y = np.zeros(shape=(len(index_array),3136))
+    #batch_y = np.zeros(shape=(len(index_array),1,56,56))
     root =  self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
         end = int((start_time[f] + 999) * (30 / 1000.0))
@@ -739,10 +740,11 @@ def extract_batch_y(self, index_array, start_time):
             while ydata_end[0] < 0:
                 t-=1
                 ydata_end = ydata[t]
-            ydata_end[0] = ydata_end[0]*(256/640.0)-16
-            ydata_end[1] = ydata_end[1] * (256 / 480.0) - 16
+            ydata_end[0] = ydata_end[0]*(256/640.0)
+            ydata_end[1] = ydata_end[1] * (256 / 480.0)
             mvmt = makeGaussian(56, center=(ydata_end)/4.0)
             batch_y[f] = np.ndarray.flatten(mvmt)
+	    #batch_y[f,0] = mvmt
         except:
             pdb.set_trace()
     return batch_y

@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+import pdb
 from tensorflow.python.training import moving_averages
 from tensorflow.python.ops import tensor_array_ops
 from tensorflow.python.ops import control_flow_ops

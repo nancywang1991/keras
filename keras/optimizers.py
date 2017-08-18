@@ -132,9 +132,8 @@ class SGD(Optimizer):
         self.inital_decay = decay
 
     def get_updates(self, params, constraints, loss):
-        grads = self.get_gradients(loss, params)
+	grads = self.get_gradients(loss, params)
         self.updates = []
-
         lr = self.lr
         if self.inital_decay > 0:
             lr *= (1. / (1. + self.decay * self.iterations))

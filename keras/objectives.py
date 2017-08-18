@@ -2,11 +2,10 @@ from __future__ import absolute_import
 import numpy as np
 from . import backend as K
 from .utils.generic_utils import get_from_module
-
+import pdb
 
 def mean_squared_error(y_true, y_pred):
     return K.mean(K.square(y_pred - y_true), axis=-1)
-
 
 def mean_absolute_error(y_true, y_pred):
     return K.mean(K.abs(y_pred - y_true), axis=-1)
