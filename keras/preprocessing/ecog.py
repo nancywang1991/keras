@@ -73,7 +73,7 @@ def load_edf(path, start_time, channels=None, ablate=None):
     for c in channels:#xrange(signal.shape[1]):
         try:
             signal[0,c] = butter_bandpass_filter(signal[:,c],10,200, 1000) 
-            signal[0,c] = (signal[0,c] - np.mean(signal[:4500,c]))/np.std(signal[:4500,c])
+            signal[0,c] = (signal[0,c] - np.mean(signal[0, c, :3500]))/np.std(signal[0, c, :3500])
         except:
             print(path)
             pass
@@ -312,7 +312,6 @@ class Iterator(object):
             if self.batch_index == 0:
                 self.index_array = np.arange(N)
                 if shuffle:
-                    self.index_array = np.random.permutation(N)
                     self.index_array = np.random.permutation(N)
             	if pre_shuffle_ind is not None:
                	    np.random.seed(self.total_batches_seen)
