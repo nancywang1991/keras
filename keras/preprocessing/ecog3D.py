@@ -14,7 +14,7 @@ import os
 import threading
 import warnings
 from .. import backend as K
-from ecogdeep.util.filter import butter_lowpass_filter
+from ecogdeep.util.filter import butter_bandpass_filter
 import cPickle as pickle
 import pdb
 
@@ -64,7 +64,7 @@ def array_to_img(x, dim_ordering='default', scale=True):
         x *= 255
     return Image.fromarray(x[:, :].astype('uint8'), 'L')
 
-def load_edf(path, channels=None):
+def load_edf(path, start_time, channels=None):
     '''Load an edf into numpy format.
 
     # Arguments
@@ -72,11 +72,18 @@ def load_edf(path, channels=None):
         channels: channels to keep
     '''
     signal = np.load(path)
-    for c in xrange(signal.shape[0]):
-        signal[c] = butter_lowpass_filter(signal[c],200,1000)
-    signal = np.expand_dims(np.reshape(np.load(path), (8,8,1200)), 0)
+    for c in xrange(64):
+        try:
+            signal[c] = butter_bandpass_filter(signal[c],10,200, 1000)
+            signal[c] = (signal[c] - np.mean(signal[c, :3500]))/np.std(signal[ c, :3500])
+        except:
+            print(path)
+            pass
+        if not c in channels:
+            signal[c] = 0
+    signal = np.expand_dims(np.reshape(signal, (8, 8, signal.shape[-1])), 0)
 
-    return signal
+    return signal[:,:,:, start_time-100:]
 
 
 def list_edfs(directory, ext='npy'):
@@ -116,7 +123,7 @@ class Ecog3DDataGenerator(object):
                  f_hi=0,
                  samp_rate=1000,
                  center=True,
-
+                 start_time=0,
                  dim_ordering='default'):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
@@ -130,6 +137,7 @@ class Ecog3DDataGenerator(object):
         self.f_hi=f_hi
         self.samp_rate=samp_rate
         self.fft=fft
+        self.start_time=start_time
 
 
         if dim_ordering not in {'th'}:
@@ -162,7 +170,7 @@ class Ecog3DDataGenerator(object):
 
     def flow_from_directory(self, directory,
                             target_size=(1,8,8, 1000), final_size=(1,8,8, 1000),
-                            classes=None, class_mode='categorical',
+                            classes=None, class_mode='categorical', pre_shuffle_ind = None, channels=None,
                             batch_size=32, shuffle=True, seed=None,
                             save_to_dir=None, save_prefix='', save_format='jpeg',color_mode="rgb",
                             follow_links=False):
@@ -172,8 +180,8 @@ class Ecog3DDataGenerator(object):
             classes=classes, class_mode=class_mode,
             dim_ordering=self.dim_ordering,
             batch_size=batch_size, shuffle=shuffle, seed=seed,
-            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format,
-            follow_links=follow_links)
+            save_to_dir=save_to_dir, save_prefix=save_prefix, save_format=save_format, channels=channels,
+            follow_links=follow_links, pre_shuffle_ind=pre_shuffle_ind)
 
     def standardize(self, x, target_size):
         if self.center:
@@ -220,14 +228,14 @@ class Ecog3DDataGenerator(object):
             if np.random.randint(100) < 25:
                 noise = np.random.normal(0,self.gaussian_noise_range, x.shape)
                 x = x + noise
-        if self.time_shift_range:
+        if self.time_shift_range and not self.center:
             if target_size[-1]+self.time_shift_range > x.shape[-1]:
                 print("time shift must be less than %i" % (x.shape[-1]-target_size[-1]))
                 raise ValueError
             if np.random.randint(100) < 25:
                 shift = np.random.randint(self.time_shift_range)
             else:
-                shift = (x.shape[-1] - target_size[-1]) / 2
+                shift = self.time_shift_range / 2
             x = x[:,:, :, shift:(shift+target_size[-1])]
         return x
 
@@ -287,19 +295,19 @@ class Ecog3DDataGenerator(object):
 
 class Iterator(object):
 
-    def __init__(self, N, batch_size, shuffle, seed):
+    def __init__(self, N, batch_size, shuffle, seed, pre_shuffle_ind):
         self.N = N
         self.batch_size = batch_size
         self.shuffle = shuffle
         self.batch_index = 0
         self.total_batches_seen = 0
         self.lock = threading.Lock()
-        self.index_generator = self._flow_index(N, batch_size, shuffle, seed)
+        self.index_generator = self._flow_index(N, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def reset(self):
         self.batch_index = 0
 
-    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None):
+    def _flow_index(self, N, batch_size=32, shuffle=False, seed=None, pre_shuffle_ind=None):
         # ensure self.batch_index is 0
         self.reset()
         while 1:
@@ -309,6 +317,9 @@ class Iterator(object):
                 index_array = np.arange(N)
                 if shuffle:
                     index_array = np.random.permutation(N)
+                if pre_shuffle_ind is not None:
+                    np.random.seed(self.total_batches_seen)
+                    self.index_array = np.random.permutation(N)
 
             current_index = (self.batch_index * batch_size) % N
             if N >= current_index + batch_size:
@@ -391,8 +402,8 @@ class DirectoryIterator(Iterator):
                  target_size=(1,8,8, 1000), final_size=(1,8,8, 1000), color_mode='rgb',
                  dim_ordering='default',
                  classes=None, class_mode='categorical',
-                 batch_size=32, shuffle=True, seed=None,
-                 save_to_dir=None, save_prefix='', save_format='jpeg',
+                 batch_size=32, shuffle=True, seed=None, start_time=0,
+                 save_to_dir=None, save_prefix='', save_format='jpeg', channels=None, pre_shuffle_ind=None,
                  follow_links=False):
         if dim_ordering == 'default':
             dim_ordering = K.image_dim_ordering()
@@ -407,6 +418,7 @@ class DirectoryIterator(Iterator):
         self.dim_ordering = dim_ordering
         self.image_shape = self.final_size
         self.classes = classes
+        self.channels = channels
         if class_mode not in {'categorical', 'binary', 'sparse', None}:
             raise ValueError('Invalid class_mode:', class_mode,
                              '; expected one of "categorical", '
@@ -464,7 +476,7 @@ class DirectoryIterator(Iterator):
                         # add filename relative to directory
                         absolute_path = os.path.join(root, fname)
                         self.filenames.append(os.path.relpath(absolute_path, directory))
-        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed)
+        super(DirectoryIterator, self).__init__(self.nb_sample, batch_size, shuffle, seed, pre_shuffle_ind)
 
     def next(self):
         #pdb.set_trace()
@@ -476,7 +488,7 @@ class DirectoryIterator(Iterator):
         # build batch of image data
         for i, j in enumerate(index_array):
             fname = self.filenames[j]
-            x = load_edf(os.path.join(self.directory, fname))
+            x = load_edf(os.path.join(self.directory, fname), self.ecog_data_generator.start_time, self.channels)
             #pdb.set_trace()
             x = self.ecog_data_generator.random_transform(x, self.target_size)
             x = self.ecog_data_generator.standardize(x, self.target_size)
