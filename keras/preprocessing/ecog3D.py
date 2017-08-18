@@ -329,7 +329,7 @@ class Iterator(object):
                 current_batch_size = N - current_index
                 self.batch_index = 0
             self.total_batches_seen += 1
-            yield (index_array[current_index: current_index + current_batch_size],
+            yield (self.index_array[current_index: current_index + current_batch_size],
                    current_index, current_batch_size)
 
     def __iter__(self):
