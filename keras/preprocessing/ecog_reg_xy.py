@@ -358,7 +358,7 @@ def makeGaussian(size, fwhm = 3, center=None):
     return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
 def extract_batch_y(self, index_array, start_time):
-    batch_y = np.zeros(shape=(len(index_array), 64))
+    batch_y = np.zeros(shape=(len(index_array)))
     # batch_y = np.zeros(shape=(len(index_array),1,56,56))
     root = self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
