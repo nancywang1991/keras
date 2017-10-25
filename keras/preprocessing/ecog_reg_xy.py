@@ -358,29 +358,29 @@ def makeGaussian(size, fwhm = 3, center=None):
     return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
 def extract_batch_y(self, index_array, start_time):
-    batch_y = np.zeros(shape=(len(index_array),900))
-    root =  self.directory + "/Y/"
+    batch_y = np.zeros(shape=(len(index_array), 3136))
+    # batch_y = np.zeros(shape=(len(index_array),1,56,56))
+    root = self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
         end = int((start_time[f] + 999) * (30 / 1000.0))
         try:
-            #print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
-            ydata = np.load(root + self.filenames[file_ind].split("/")[-1])[(end - 15):end]
+            # print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
+            ydata = np.load(root + self.filenames[file_ind].split("/")[-1].split(".")[0] + ".npy")[(end - 15):end]
             ydata_start = ydata[0]
             ydata_end = ydata[-1]
-            t= 0
+            t = 0
             while ydata_start[0] < 0:
-                t+=1
+                t += 1
                 ydata_start = ydata[t]
-            t=-1
+            t = -1
             while ydata_end[0] < 0:
-                t-=1
+                t -= 1
                 ydata_end = ydata[t]
-            mvmt = makeGaussian(30, center=(ydata_end - ydata_start)/2.0 + 15)
-            #if ydata_start[0]>ydata_end[0]:
-            #	mvmt = makeGaussian(30, center=(0,0))
-            #else:
-            #	mvmt = makeGaussian(30, center=(30,0))
+            ydata_end[0] = ydata_end[0] * (256 / 640.0)
+            ydata_end[1] = ydata_end[1] * (256 / 480.0)
+            mvmt = makeGaussian(56, center=(ydata_end) / 4.0)
             batch_y[f] = np.ndarray.flatten(mvmt)
+        # batch_y[f,0] = mvmt
         except:
             pdb.set_trace()
     return batch_y
