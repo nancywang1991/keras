@@ -376,12 +376,13 @@ def extract_batch_y(self, index_array, start_time):
             while ydata_end[0] < 0:
                 t -= 1
                 ydata_end = ydata[t]
-            ydata_end[0] = ydata_end[0] * (32 / 640.0)
-            ydata_end[1] = ydata_end[1] * (32 / 480.0)
-            ydata_start[0] = ydata_start[0] * (32 / 640.0)
-            ydata_start[1] = ydata_start[1] * (32 / 480.0)
-            mvmt = makeGaussian(8, center=(ydata_end-ydata_start)+(4,4))
-            batch_y[f] = np.ndarray.flatten(mvmt)
+            ydata_end[0] = ydata_end[0] * (64 / 640.0)
+            ydata_end[1] = ydata_end[1] * (64 / 480.0)
+            ydata_start[0] = ydata_start[0] * (64 / 640.0)
+            ydata_start[1] = ydata_start[1] * (64 / 480.0)
+            #mvmt = makeGaussian(8, center=abs(ydata_end-ydata_start))
+            #batch_y[f] = np.ndarray.flatten(mvmt)
+            batch_y = np.sum(np.abs(ydata_end-ydata_start))
         # batch_y[f,0] = mvmt
         except:
             pdb.set_trace()
