@@ -14,7 +14,7 @@ def mean_squared_error_circular(y_true, y_pred):
     error1 = K.mean(K.square(y_pred - y_true), axis=-1)
     error2 = K.mean(K.square(y_pred-360 - y_true), axis=-1)
 
-    return K.min([error1, error2], axis=0)
+    return K.min(np.array([error1, error2]), axis=0)
 
 def mean_absolute_percentage_error(y_true, y_pred):
     diff = K.abs((y_true - y_pred) / K.clip(K.abs(y_true), K.epsilon(), np.inf))
