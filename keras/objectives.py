@@ -10,6 +10,8 @@ def mean_squared_error(y_true, y_pred):
 def mean_absolute_error(y_true, y_pred):
     return K.mean(K.abs(y_pred - y_true), axis=-1)
 
+def mean_squared_error_circular(y_true, y_pred):
+    return min(K.mean(K.square(y_pred - y_true), axis=-1), K.mean(K.square(y_pred-360 - y_true), axis=-1))
 
 def mean_absolute_percentage_error(y_true, y_pred):
     diff = K.abs((y_true - y_pred) / K.clip(K.abs(y_true), K.epsilon(), np.inf))
