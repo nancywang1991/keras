@@ -358,9 +358,8 @@ def makeGaussian(size, fwhm = 3, center=None):
     return np.exp(-4*np.log(2) * ((x-x0)**2 + (y-y0)**2) / fwhm**2)
 
 def angle_between(p1, p2):
-    ang1 = np.arctan2(*p1[::-1])
-    ang2 = np.arctan2(*p2[::-1])
-    return np.rad2deg((ang1 - ang2) % (2 * np.pi))
+    ang1 = np.arctan2(*(p2[::-1]-p1[::-1]))
+    return np.rad2deg(ang1 % (2 * np.pi))
 
 def extract_batch_y(self, index_array, start_time):
     batch_y = np.zeros(shape=(len(index_array)))
