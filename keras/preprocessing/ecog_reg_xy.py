@@ -388,7 +388,6 @@ def extract_batch_y(self, index_array, start_time):
             #batch_y[f] = np.ndarray.flatten(mvmt)
             #batch_y[f] = np.sum(np.abs(ydata_end-ydata_start))
             batch_y[f] = angle_between(ydata_start, ydata_end)
-            pdb.set_trace()
         # batch_y[f,0] = mvmt
         except:
             pdb.set_trace()
