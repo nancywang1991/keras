@@ -17,6 +17,7 @@ from .. import backend as K
 from ecogdeep.util.filter import butter_bandpass_filter
 import cPickle as pickle
 import pdb
+from matplotlib.colors import hsv_to_rgb
 
 def transform_matrix_offset_center(matrix, x, y):
     o_x = float(x) / 2 + 0.5
@@ -362,7 +363,7 @@ def angle_between(p1, p2):
     return np.rad2deg(ang1 % (2 * np.pi))
 
 def extract_batch_y(self, index_array, start_time):
-    batch_y = np.zeros(shape=(len(index_array)))
+    batch_y = np.zeros(shape=(len(index_array), 3))
     # batch_y = np.zeros(shape=(len(index_array),1,56,56))
     root = self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
@@ -385,10 +386,7 @@ def extract_batch_y(self, index_array, start_time):
             ydata_start[0] = ydata_start[0] * (64 / 640.0)
             ydata_start[1] = ydata_start[1] * (64 / 480.0)
             #mvmt = makeGaussian(8, center=abs(ydata_end-ydata_start))
-            #batch_y[f] = np.ndarray.flatten(mvmt)
-            batch_y[f] = np.sum(np.abs(ydata_end-ydata_start))
-            #batch_y[f,1] = angle_between(ydata_start, ydata_end)
-        # batch_y[f,0] = mvmt
+            batch_y[f] = hsv_to_rgb((angle_between(ydata_start, ydata_end)/360.0, 1, min(np.sum(np.abs(ydata_end-ydata_start))/4.0,1.0)))
         except:
             pdb.set_trace()
     return batch_y
