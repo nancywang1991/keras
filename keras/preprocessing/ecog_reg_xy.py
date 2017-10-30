@@ -389,7 +389,7 @@ def extract_batch_y(self, index_array, start_time):
             batch_y[:, f] = hsv_to_rgb((angle_between(ydata_start, ydata_end)/360.0, 1, min(np.sum(np.abs(ydata_end-ydata_start))/4.0,1.0)))
         except:
             pdb.set_trace()
-    return batch_y
+    return [batch_y[0], batch_y[1], batch_y[2]]
 
 class DirectoryIterator(Iterator):
 
