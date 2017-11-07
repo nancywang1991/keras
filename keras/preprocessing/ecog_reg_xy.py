@@ -367,10 +367,10 @@ def extract_batch_y(self, index_array, start_time):
     # batch_y = np.zeros(shape=(len(index_array),1,56,56))
     root = self.directory + "/Y/"
     for f, file_ind in enumerate(index_array):
-        end = int((start_time[f] + 999) * (30 / 1000.0))
+        #end = int((start_time[f] + 999) * (30 / 1000.0))
         try:
             # print(np.load(root + self.filenames[file_ind].split("/")[-1])[end-15:end])
-            ydata = np.load(root + self.filenames[file_ind].split("/")[-1].split(".")[0] + ".npy")[(end - 15):end]
+            ydata = np.load(root + self.filenames[file_ind].split("/")[-1].split(".")[0] + ".npy")[-15:]
             ydata_start = ydata[0]
             ydata_end = ydata[-1]
             t = 0
